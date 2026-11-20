@@ -279,6 +279,7 @@ function render(keepScroll) {
   $('#main').innerHTML = html;
   $$('.tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.tab === ui.tab));
   scrollTo(0, keepScroll ? y : 0);
+  ANIM.mountAll($('#main'));
   tick();
 }
 
@@ -305,7 +306,8 @@ const VIEWS = {
         <p class="label">Hoy te toca</p>
         <h2>${esc(day.name)}</h2>
         <ul class="list">${day.items.map((it) => `<li><button class="row-btn" data-action="ex-open" data-id="${it.exId}">
-          <span>${esc(exName(it.exId))}</span>
+          ${ANIM.has(exName(it.exId)) ? `<span class="thumb sm" data-anim="${esc(exName(it.exId))}"></span>` : '<span class="thumb sm"></span>'}
+          <span class="grow">${esc(exName(it.exId))}</span>
           ${videoIds.has(it.exId) ? '<span class="badge">▶︎</span>' : ''}
           <span class="muted">${it.sets}×${esc(it.reps)}</span></button></li>`).join('')}</ul>
         <button class="btn primary big" data-action="start" data-day="${day.id}">Empezar entrenamiento</button>
@@ -525,9 +527,10 @@ function viewWorkout() {
     if (readyToProgress(last, en)) info.push(`<b style="color:var(--accent)">💡 La vez pasada llegaste al tope de reps: hoy sube un poco de peso</b>`);
     h += `<div class="card">
       <div class="wk-ex-head">
-        <div><h3>${esc(exName(en.exId))}</h3>${info.length ? `<p class="muted small">${info.join('<br>')}</p>` : ''}</div>
+        ${ANIM.has(exName(en.exId)) ? `<button class="thumb" data-action="ex-open" data-id="${en.exId}" aria-label="Ver cómo se hace" data-anim="${esc(exName(en.exId))}"></button>` : ''}
+        <div class="grow"><h3>${esc(exName(en.exId))}</h3>${info.length ? `<p class="muted small">${info.join('<br>')}</p>` : ''}</div>
         <div class="row gap">
-          <button class="icon-btn sm" data-action="ex-open" data-id="${en.exId}" aria-label="Ver video y notas">${videoIds.has(en.exId) ? '▶︎' : 'i'}</button>
+          ${videoIds.has(en.exId) || !ANIM.has(exName(en.exId)) ? `<button class="icon-btn sm" data-action="ex-open" data-id="${en.exId}" aria-label="Ver video y notas">${videoIds.has(en.exId) ? '▶︎' : 'i'}</button>` : ''}
           <button class="icon-btn sm" data-action="wk-remove-ex" data-ei="${ei}" aria-label="Quitar ejercicio">✕</button>
         </div>
       </div>
@@ -740,12 +743,17 @@ function exerciseSheet(id) {
     const hist = exHistory(ex.id);
     const bodyweight = hist.length && hist.every((h) => h.max === 0);
     const goodLink = /^https?:\/\//i.test(ex.link || '');
+    const yt = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' técnica correcta')}`;
+    const tips = ANIM.tips(ex.name);
     s.body.innerHTML = `<p class="label">${esc(ex.group)}</p><h2>${esc(ex.name)}</h2>
+      ${ANIM.has(ex.name) ? `<div class="anim-box" data-anim="${esc(ex.name)}"></div>` : ''}
+      ${tips.length ? `<ul class="tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      <a class="btn" href="${yt}" target="_blank" rel="noopener">▶ Ver videos en YouTube <span class="muted small">(con internet)</span></a>
       ${hasVid
-        ? `<video class="vid" controls playsinline preload="metadata"></video>
+        ? `<p class="label" style="margin-top:18px">Tu video</p><video class="vid" controls playsinline preload="metadata"></video>
            <div class="row gap"><button class="btn sm" data-action="vid-add">Cambiar video</button><button class="btn sm ghost danger" data-action="vid-del">Quitar video</button></div>`
-        : `<button class="vid-empty" data-action="vid-add"><span>🎥</span><b>Agregar video</b>
-           <small>Grábalo o elígelo de tu galería. Se guarda en tu cel y lo puedes ver sin internet.</small></button>`}
+        : `<button class="vid-empty" data-action="vid-add"><span>🎥</span><b>Agregar tu propio video</b>
+           <small>Grábalo o elígelo de tu galería (o descárgalo de YouTube). Se guarda en tu cel y lo ves sin internet.</small></button>`}
       <label class="field"><span>Notas de técnica</span><textarea class="input" rows="3" data-f="notes" placeholder="Ej. codos a 45°, bajar lento, apretar arriba…">${esc(ex.notes)}</textarea></label>
       <label class="field"><span>Enlace a video en internet (opcional)</span><input class="input" type="url" data-f="link" value="${esc(ex.link)}" placeholder="https://youtube.com/…"></label>
       ${goodLink ? `<a class="btn sm" href="${esc(ex.link)}" target="_blank" rel="noopener">Abrir enlace ↗</a>` : ''}
@@ -757,6 +765,7 @@ function exerciseSheet(id) {
         </div>
         ${lineChart(hist.map((h) => ({ x: h.date, y: bodyweight ? h.reps : h.max })), bodyweight ? 'reps' : 'kg', bodyweight ? 'Repeticiones máximas' : 'Peso máximo')}` : ''}
       <div class="row gap mt"><button class="btn sm" data-action="edit">Editar nombre</button><button class="btn sm ghost danger" data-action="del">Eliminar</button></div>`;
+    ANIM.mountAll(s.body);
     if (hasVid) {
       const rec = await vidGet(ex.id);
       const v = $('video', s.body);

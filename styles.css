@@ -265,3 +265,27 @@ select.input.sm { padding-right: 32px; text-overflow: ellipsis; }
   box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- animaciones de ejercicios ---------- */
+.anim-box { margin: 12px 0 4px; background: var(--card2); border-radius: 16px; aspect-ratio: 4 / 3; max-height: 46vh; display: grid; place-items: center; }
+.anim-box .fig { width: 100%; height: 100%; }
+.fig { display: block; }
+.fig line, .fig path { stroke-linecap: round; fill: none; }
+.fig .b { stroke: var(--text); }
+.fig .bf { fill: var(--text); }
+.fig .far { opacity: .38; }
+.fig .eq { stroke: var(--muted); fill: none; }
+.fig .eqf { fill: #3a404c; stroke: none; }
+.fig .gr { stroke: var(--line); }
+.fig .w { stroke: var(--accent); stroke-width: 3; fill: none; }
+.fig .wf { fill: var(--accent); }
+.fig .wl { stroke: var(--accent); }
+.fig .rope { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+.tips { margin: 10px 0 4px; padding-left: 20px; color: var(--text); font-size: 15px; }
+.tips li { margin: 4px 0; }
+.thumb { flex: none; width: 76px; height: 57px; padding: 0; border: 0; border-radius: 10px; background: var(--card2); overflow: hidden; }
+.thumb .fig { width: 100%; height: 100%; }
+.thumb.sm { width: 56px; height: 42px; border-radius: 8px; }
+.row-btn > span.thumb { flex: none; }
+.wk-ex-head { align-items: center; }
+.wk-ex-head .grow { min-width: 0; }
