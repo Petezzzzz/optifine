@@ -185,21 +185,23 @@ function imcCat(imc) {
 
 const TEMPLATES = {
   fullbody: {
-    title: 'Full body · 3 días',
-    desc: 'Lunes, miércoles y viernes. Todo el cuerpo cada día, con 3 variantes (A, B, C).',
+    title: 'Full body · 3 días (bajar grasa y ganar músculo)',
+    desc: 'Lunes, miércoles y viernes. Todo el cuerpo cada día en rangos de hipertrofia, y 15 min de cardio al final.',
     days: [
       ['Full body A', [
-        ['Sentadilla', 4, '6-8'], ['Press de banca', 4, '6-8'], ['Remo con barra', 3, '8-10'],
-        ['Press militar', 3, '8-10'], ['Curl femoral', 3, '10-12'], ['Plancha', 3, '45 s'],
+        ['Sentadilla', 4, '6-10'], ['Press de banca', 4, '6-10'], ['Remo con barra', 3, '8-12'],
+        ['Press militar', 3, '8-12'], ['Curl femoral', 3, '10-15'], ['Plancha', 3, '45 s'],
+        ['Caminadora', 1, '15 min'],
       ]],
       ['Full body B', [
-        ['Peso muerto', 3, '5'], ['Press inclinado con mancuernas', 3, '8-10'], ['Dominadas', 3, '6-10'],
-        ['Zancadas', 3, '10 c/pierna'], ['Elevaciones laterales', 3, '12-15'], ['Curl con barra', 3, '10-12'],
+        ['Peso muerto', 3, '5-8'], ['Press inclinado con mancuernas', 3, '8-12'], ['Dominadas', 3, '6-12'],
+        ['Zancadas', 3, '10-12 c/pierna'], ['Elevaciones laterales', 3, '12-20'], ['Curl con barra', 3, '10-15'],
+        ['Bicicleta', 1, '15 min'],
       ]],
       ['Full body C', [
-        ['Prensa', 3, '10-12'], ['Fondos en paralelas', 3, '8-12'], ['Remo con mancuerna', 3, '10 c/lado'],
-        ['Hip thrust', 3, '10-12'], ['Face pull', 3, '15'], ['Extensión de tríceps en polea', 3, '12'],
-        ['Elevación de pantorrilla', 3, '15'],
+        ['Prensa', 3, '10-15'], ['Fondos en paralelas', 3, '8-12'], ['Remo con mancuerna', 3, '10-12 c/lado'],
+        ['Hip thrust', 3, '8-12'], ['Face pull', 3, '15-20'], ['Extensión de tríceps en polea', 3, '10-15'],
+        ['Elevación de pantorrilla', 3, '12-20'], ['Caminadora', 1, '15 min'],
       ]],
     ],
     // día de la semana (0 = domingo) -> índice del día
@@ -387,6 +389,7 @@ const VIEWS = {
         <div><b>${imc ? fmtNum(imc) : '—'}</b><span>IMC${imc ? ' · ' + imcCat(imc) : ''}</span></div>
       </div>
       ${delta}
+      ${peso != null ? `<p class="small center" style="margin-top:10px">🥩 Proteína para tu meta: <b>${Math.round(peso * 1.8)}–${Math.round(peso * 2.2)} g al día</b></p>` : ''}
       ${peso != null && grasa != null ? `<p class="muted small center">Masa magra ≈ ${fmtNum(peso * (1 - grasa / 100))} kg · Grasa ≈ ${fmtNum(peso * grasa / 100)} kg</p>` : ''}
       <div class="row between mt"><span class="muted">Altura: <b style="color:var(--text)">${alt ? alt + ' cm' : 'sin registrar'}</b></span>
         <button class="btn sm" data-action="altura">${alt ? 'Cambiar' : 'Agregar altura'}</button></div>
@@ -494,6 +497,13 @@ function startWorkout(dayId) {
 function newEntry(exId, sets = 3, reps = '') {
   return { exId, reps, sets: Array.from({ length: Math.max(1, sets | 0) }, () => ({ w: '', r: '', done: false })) };
 }
+// Doble progresión: si la vez pasada todas las series llegaron al tope del rango (ej. 12 en "8-12"), toca subir peso.
+function readyToProgress(last, en) {
+  const m = String(en.reps).match(/^\s*(\d+)\s*-\s*(\d+)/);
+  if (!last || !m) return false;
+  const top = +m[2];
+  return last.sets.length >= en.sets.length && last.sets.every((s) => s.w > 0 && s.r >= top);
+}
 function placeholder(last, si, reps) {
   const s = last ? last.sets[si] || last.sets[last.sets.length - 1] : null;
   return {
@@ -512,6 +522,7 @@ function viewWorkout() {
     const info = [];
     if (en.reps) info.push(`Meta: ${en.sets.length}×${esc(en.reps)}`);
     if (last) info.push(`Última vez (${fmtDateShort(last.date)}): ${last.sets.map((s) => `${s.w ? fmtNum(s.w) : '—'}×${s.r}`).join(', ')}`);
+    if (readyToProgress(last, en)) info.push(`<b style="color:var(--accent)">💡 La vez pasada llegaste al tope de reps: hoy sube un poco de peso</b>`);
     h += `<div class="card">
       <div class="wk-ex-head">
         <div><h3>${esc(exName(en.exId))}</h3>${info.length ? `<p class="muted small">${info.join('<br>')}</p>` : ''}</div>

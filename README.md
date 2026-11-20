@@ -6,7 +6,8 @@ App de gimnasio para el cel que **funciona sin internet**. Todo se guarda en el 
 - **Hoy**: te dice qué rutina te toca según el día de la semana y te deja entrenar: anotas peso y reps de cada serie, ves lo que hiciste la última vez y tienes un temporizador de descanso que suena o vibra al terminar.
 - **Rutina**: plantillas listas (full body 3 días, o empuje/jalón/pierna 6 días) o creas tus días (ej. "Pecho y tríceps") con ejercicios, series y reps, y los asignas de lunes a domingo.
 - **Ejercicios**: más de 30 ejercicios ya cargados y puedes agregar los tuyos. A cada uno le puedes poner **su video** (lo grabas o lo eliges de la galería y se guarda en el cel), notas de técnica y un enlace opcional a YouTube.
-- **Cuerpo**: altura, peso, % de grasa y medidas (cintura, cadera, pecho, brazo, pierna), con IMC, masa magra y gráficas.
+- **Te dice cuándo subir peso** (doble progresión): si la vez pasada llegaste al tope del rango de reps en todas las series, te avisa.
+- **Cuerpo**: altura, peso, % de grasa y medidas (cintura, cadera, pecho, brazo, pierna), con IMC, masa magra, proteína diaria sugerida y gráficas.
 - **Progreso**: calendario de las últimas 12 semanas, récords por ejercicio e historial de entrenamientos.
 - **Respaldo**: desde Ajustes ⚙️ puedes exportar o importar tus datos en un archivo `.json` (los videos no se incluyen).
 
