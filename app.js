@@ -183,24 +183,77 @@ function imcCat(imc) {
   return 'obesidad';
 }
 
-function loadExample() {
+const TEMPLATES = {
+  fullbody: {
+    title: 'Full body · 3 días',
+    desc: 'Lunes, miércoles y viernes. Todo el cuerpo cada día, con 3 variantes (A, B, C).',
+    days: [
+      ['Full body A', [
+        ['Sentadilla', 4, '6-8'], ['Press de banca', 4, '6-8'], ['Remo con barra', 3, '8-10'],
+        ['Press militar', 3, '8-10'], ['Curl femoral', 3, '10-12'], ['Plancha', 3, '45 s'],
+      ]],
+      ['Full body B', [
+        ['Peso muerto', 3, '5'], ['Press inclinado con mancuernas', 3, '8-10'], ['Dominadas', 3, '6-10'],
+        ['Zancadas', 3, '10 c/pierna'], ['Elevaciones laterales', 3, '12-15'], ['Curl con barra', 3, '10-12'],
+      ]],
+      ['Full body C', [
+        ['Prensa', 3, '10-12'], ['Fondos en paralelas', 3, '8-12'], ['Remo con mancuerna', 3, '10 c/lado'],
+        ['Hip thrust', 3, '10-12'], ['Face pull', 3, '15'], ['Extensión de tríceps en polea', 3, '12'],
+        ['Elevación de pantorrilla', 3, '15'],
+      ]],
+    ],
+    // día de la semana (0 = domingo) -> índice del día
+    schedule: { 1: 0, 3: 1, 5: 2 },
+  },
+  ppl: {
+    title: 'Empuje / Jalón / Pierna · 6 días',
+    desc: 'Lunes a sábado. Cada grupo muscular 2 veces por semana.',
+    days: [
+      ['Empuje · pecho, hombro, tríceps', [
+        ['Press de banca', 4, '6-8'], ['Press inclinado con mancuernas', 3, '8-10'], ['Press militar', 3, '8-10'],
+        ['Elevaciones laterales', 3, '12-15'], ['Extensión de tríceps en polea', 3, '10-12'],
+      ]],
+      ['Jalón · espalda, bíceps', [
+        ['Dominadas', 4, '6-10'], ['Remo con barra', 4, '8'], ['Jalón al pecho', 3, '10-12'],
+        ['Face pull', 3, '15'], ['Curl con barra', 3, '10'], ['Curl martillo', 3, '12'],
+      ]],
+      ['Pierna · y abdomen', [
+        ['Sentadilla', 4, '6-8'], ['Peso muerto rumano', 3, '8-10'], ['Prensa', 3, '10-12'],
+        ['Curl femoral', 3, '12'], ['Elevación de pantorrilla', 4, '15'], ['Plancha', 3, '45 s'],
+      ]],
+    ],
+    schedule: { 1: 0, 2: 1, 3: 2, 4: 0, 5: 1, 6: 2 },
+  },
+};
+
+// Carga una plantilla. Reemplaza los días de rutina (el historial no se toca).
+function loadTemplate(key) {
+  const t = TEMPLATES[key];
   const byName = (n) => state.exercises.find((e) => e.name === n) || addExercise(n, 'Otro');
-  const mk = (name, items) => ({ id: uid(), name, items: items.map(([n, sets, reps]) => ({ exId: byName(n).id, sets, reps })) });
-  const a = mk('Empuje · pecho, hombro, tríceps', [
-    ['Press de banca', 4, '6-8'], ['Press inclinado con mancuernas', 3, '8-10'], ['Press militar', 3, '8-10'],
-    ['Elevaciones laterales', 3, '12-15'], ['Extensión de tríceps en polea', 3, '10-12'],
-  ]);
-  const b = mk('Jalón · espalda, bíceps', [
-    ['Dominadas', 4, '6-10'], ['Remo con barra', 4, '8'], ['Jalón al pecho', 3, '10-12'],
-    ['Face pull', 3, '15'], ['Curl con barra', 3, '10'], ['Curl martillo', 3, '12'],
-  ]);
-  const c = mk('Pierna · y abdomen', [
-    ['Sentadilla', 4, '6-8'], ['Peso muerto rumano', 3, '8-10'], ['Prensa', 3, '10-12'],
-    ['Curl femoral', 3, '12'], ['Elevación de pantorrilla', 4, '15'], ['Plancha', 3, '45 s'],
-  ]);
-  state.days.push(a, b, c);
-  state.schedule = { 0: null, 1: a.id, 2: b.id, 3: c.id, 4: a.id, 5: b.id, 6: c.id };
+  const days = t.days.map(([name, items]) => ({ id: uid(), name, items: items.map(([n, sets, reps]) => ({ exId: byName(n).id, sets, reps })) }));
+  state.days = days;
+  state.schedule = { 0: null, 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
+  for (const [wd, i] of Object.entries(t.schedule)) state.schedule[wd] = days[i].id;
   persist();
+}
+
+function templatesSheet() {
+  openSheet(`<h2>Plantillas de rutina</h2>
+    <p class="muted small">Elige una para empezar. Después puedes cambiar ejercicios, series, reps y días.${state.days.length ? ' <b>Reemplaza tu rutina actual</b> (tu historial se queda).' : ''}</p>
+    ${Object.entries(TEMPLATES).map(([k, t]) => `<button class="card row-btn" style="background:var(--card2);display:block;margin:10px 0" data-action="tpl" data-k="${k}">
+      <b>${esc(t.title)}</b><br><span class="muted small">${esc(t.desc)}</span>
+      <span class="muted small" style="display:block;margin-top:6px">${t.days.map(([n]) => esc(n)).join(' · ')}</span></button>`).join('')}`, {
+    actions: {
+      tpl(el) {
+        if (state.days.length && !confirm('¿Reemplazar tu rutina actual con esta plantilla?')) return;
+        loadTemplate(el.dataset.k);
+        closeSheet();
+        ui.tab = 'rutina';
+        render();
+        toast(`${TEMPLATES[el.dataset.k].title} lista ✅`);
+      },
+    },
+  });
 }
 function addExercise(name, group) {
   const ex = { id: uid(), name, group: GROUPS.includes(group) ? group : 'Otro', notes: '', link: '' };
@@ -240,9 +293,10 @@ const VIEWS = {
       h += `<div class="card">
         <h2>Arma tu rutina 💪</h2>
         <p class="muted">Crea tus días (pecho, pierna, lo que quieras) y asígnalos a la semana. La app te dirá qué te toca cada día.</p>
-        <button class="btn primary big" data-action="load-example">Usar una rutina de ejemplo</button>
-        <button class="btn" data-action="tab" data-tab="rutina">Crear la mía desde cero</button>
-        <p class="muted small center">La de ejemplo la puedes cambiar toda después.</p>
+        <button class="btn primary big" data-action="load-fullbody">Full body · 3 días a la semana</button>
+        <button class="btn" data-action="templates">Ver otras plantillas</button>
+        <button class="btn ghost" data-action="tab" data-tab="rutina">Crear la mía desde cero</button>
+        <p class="muted small center">Cualquier plantilla la puedes cambiar toda después.</p>
       </div>`;
     } else if (day) {
       h += `<div class="card today-card">
@@ -283,7 +337,8 @@ const VIEWS = {
         <h2>Todavía no tienes rutina</h2>
         <p class="muted">Crea un “día” por cada tipo de entrenamiento (ej. <i>Pecho y tríceps</i>), agrégale ejercicios con sus series y repeticiones, y luego dile a la app qué día de la semana toca cada uno.</p>
         <button class="btn primary big" data-action="day-new">+ Crear mi primer día</button>
-        <button class="btn" data-action="load-example">Usar rutina de ejemplo</button>
+        <button class="btn" data-action="load-fullbody">Usar full body · 3 días</button>
+        <button class="btn ghost" data-action="templates">Ver plantillas</button>
       </div>`;
       return h;
     }
@@ -303,6 +358,7 @@ const VIEWS = {
         <p class="muted small">${d.items.length} ejercicio${d.items.length === 1 ? '' : 's'}${d.items.length ? ' · ' : ''}${d.items.map((it) => esc(exName(it.exId))).join(' · ')}</p>
       </button>`;
     }
+    h += `<button class="btn ghost mt" data-action="templates">Cambiar a una plantilla</button>`;
     return h;
   },
 
@@ -1021,7 +1077,11 @@ function toast(msg) {
 const ACTIONS = {
   tab(el) { ui.tab = el.dataset.tab; render(); },
   settings: settingsSheet,
-  'load-example'() { if (!state.days.length) loadExample(); ui.tab = 'hoy'; render(); toast('Rutina de ejemplo lista ✅ Cámbiala en “Rutina”'); },
+  'load-fullbody'() {
+    if (state.days.length && !confirm('¿Reemplazar tu rutina actual?')) return;
+    loadTemplate('fullbody'); render(); toast('Full body lista ✅ Lunes, miércoles y viernes');
+  },
+  templates: templatesSheet,
   start(el) {
     if (state.active) return toast('Ya tienes un entrenamiento en curso');
     startWorkout(el.dataset.day);
