@@ -80,7 +80,7 @@ const SEED = [
   ['Dominadas', 'Espalda'], ['Jalón al pecho', 'Espalda'], ['Remo con barra', 'Espalda'],
   ['Remo con mancuerna', 'Espalda'], ['Remo sentado en polea', 'Espalda'], ['Peso muerto', 'Espalda'],
   ['Sentadilla', 'Piernas'], ['Prensa', 'Piernas'], ['Zancadas', 'Piernas'], ['Peso muerto rumano', 'Piernas'],
-  ['Extensión de cuádriceps', 'Piernas'], ['Curl femoral', 'Piernas'], ['Hip thrust', 'Piernas'],
+  ['Extensión de cuádriceps', 'Piernas'], ['Curl femoral', 'Piernas'], ['Hip thrust', 'Piernas'], ['Puente de glúteo', 'Piernas'],
   ['Elevación de pantorrilla', 'Piernas'],
   ['Press militar', 'Hombros'], ['Elevaciones laterales', 'Hombros'], ['Face pull', 'Hombros'],
   ['Pájaros (deltoide posterior)', 'Hombros'],
@@ -200,7 +200,7 @@ const TEMPLATES = {
       ]],
       ['Full body C', [
         ['Prensa', 3, '10-15'], ['Lagartijas', 3, '8-12'], ['Remo con mancuerna', 3, '10-12 c/lado'],
-        ['Hip thrust', 3, '8-12'], ['Face pull', 3, '15-20'], ['Extensión de tríceps en polea', 3, '10-15'],
+        ['Puente de glúteo', 3, '12-15'], ['Face pull', 3, '15-20'], ['Extensión de tríceps en polea', 3, '10-15'],
         ['Elevación de pantorrilla', 3, '12-20'], ['Caminadora', 1, '15 min'],
       ]],
     ],
@@ -231,7 +231,7 @@ const TEMPLATES = {
 // Carga una plantilla. Reemplaza los días de rutina (el historial no se toca).
 function loadTemplate(key) {
   const t = TEMPLATES[key];
-  const byName = (n) => state.exercises.find((e) => e.name === n) || addExercise(n, 'Otro');
+  const byName = (n) => state.exercises.find((e) => e.name === n) || addExercise(n, SEED.find((x) => x[0] === n)?.[1] || 'Otro');
   const days = t.days.map(([name, items]) => ({ id: uid(), name, items: items.map(([n, sets, reps]) => ({ exId: byName(n).id, sets, reps })) }));
   state.days = days;
   state.schedule = { 0: null, 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
@@ -514,7 +514,8 @@ const START = {
   'Prensa': [60, '60 kg agregados a la máquina. Las primeras semanas debe sentirse fácil.'],
   'Peso muerto': [60, 'Barra + 20 kg por lado, con discos grandes para que la barra quede a buena altura.'],
   'Peso muerto rumano': [40, 'Barra + 10 kg por lado.'],
-  'Hip thrust': [40, 'Barra + 10 kg por lado, con almohadilla en la cadera.'],
+  'Hip thrust': [40, 'Barra + 10 kg por lado, con almohadilla en la cadera. Si se te complica acomodarte, haz puente de glúteo en el piso.'],
+  'Puente de glúteo': [0, 'Sin peso. Cuando te salgan 15 fácil, pon un disco de 10–20 kg sobre la cadera.'],
   'Zancadas': [0, 'Sin peso: tu cuerpo ya es buena carga. Cuando salgan 12 por pierna fácil, agarra mancuernas de 6–8 kg.'],
   'Extensión de cuádriceps': [25, '25 kg en la máquina.'],
   'Curl femoral': [20, '20 kg en la máquina.'],

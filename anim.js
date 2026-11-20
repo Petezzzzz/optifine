@@ -181,9 +181,14 @@ const ANIM = (() => {
     },
     'Hip thrust': {
       a: { hip: [71, 103], t: -152, hand: [71, 96], foot: [100, 110], kh: [0.2, -1], eh: [0.5, -1] },
-      b: { hip: [76, 86], t: 178, hand: [76, 79] },
+      b: { hip: [76, 86], t: -182, hand: [76, 79] },
       props: [{ k: 'rect', p: [20, 86, 32, 24] }, { k: 'plate', at: 'hip', off: [0, -9], r: 9 }],
       tips: ['Parte alta de la espalda apoyada en la banca.', 'Sube la cadera apretando glúteos hasta quedar recto de hombros a rodillas.', 'Barbilla hacia el pecho; no arquees la espalda baja.'],
+    },
+    'Puente de glúteo': {
+      a: { hip: [80, 104], t: 180, hand: [81, 108], foot: [104, 110], kh: [0, -1], eh: [0, 1] },
+      b: { hip: [82, 90], t: 155, hand: [85, 108] },
+      tips: ['Boca arriba, rodillas dobladas y pies cerca de los glúteos.', 'Sube la cadera apretando glúteos hasta quedar recto de hombros a rodillas.', 'Pausa 1 segundo arriba y baja lento.'],
     },
     'Extensión de cuádriceps': {
       a: { hip: [70, 79], t: -100, hand: [70, 84], foot: [80, 106], kh: [1, -0.2] },
