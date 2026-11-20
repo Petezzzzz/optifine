@@ -194,12 +194,12 @@ const TEMPLATES = {
         ['Caminadora', 1, '15 min'],
       ]],
       ['Full body B', [
-        ['Peso muerto', 3, '5-8'], ['Press inclinado con mancuernas', 3, '8-12'], ['Dominadas', 3, '6-12'],
+        ['Peso muerto', 3, '5-8'], ['Press inclinado con mancuernas', 3, '8-12'], ['Jalón al pecho', 3, '10-12'],
         ['Zancadas', 3, '10-12 c/pierna'], ['Elevaciones laterales', 3, '12-20'], ['Curl con barra', 3, '10-15'],
         ['Bicicleta', 1, '15 min'],
       ]],
       ['Full body C', [
-        ['Prensa', 3, '10-15'], ['Fondos en paralelas', 3, '8-12'], ['Remo con mancuerna', 3, '10-12 c/lado'],
+        ['Prensa', 3, '10-15'], ['Lagartijas', 3, '8-12'], ['Remo con mancuerna', 3, '10-12 c/lado'],
         ['Hip thrust', 3, '8-12'], ['Face pull', 3, '15-20'], ['Extensión de tríceps en polea', 3, '10-15'],
         ['Elevación de pantorrilla', 3, '12-20'], ['Caminadora', 1, '15 min'],
       ]],
@@ -506,10 +506,51 @@ function readyToProgress(last, en) {
   const top = +m[2];
   return last.sets.length >= en.sets.length && last.sets.every((s) => s.w > 0 && s.r >= top);
 }
-function placeholder(last, si, reps) {
+/* Pesos sugeridos para empezar (principiante, ~120 kg de peso corporal).
+   Son un punto de partida: la idea es que salgan 10-12 reps con buena técnica
+   y que todavía te queden 2-3 en el tanque. Cada máquina pesa distinto. */
+const START = {
+  'Sentadilla': [40, 'Barra (20 kg) + 10 kg por lado. Si la técnica no sale, empieza con sentadilla goblet con una mancuerna de 16–20 kg.'],
+  'Prensa': [60, '60 kg agregados a la máquina. Las primeras semanas debe sentirse fácil.'],
+  'Peso muerto': [60, 'Barra + 20 kg por lado, con discos grandes para que la barra quede a buena altura.'],
+  'Peso muerto rumano': [40, 'Barra + 10 kg por lado.'],
+  'Hip thrust': [40, 'Barra + 10 kg por lado, con almohadilla en la cadera.'],
+  'Zancadas': [0, 'Sin peso: tu cuerpo ya es buena carga. Cuando salgan 12 por pierna fácil, agarra mancuernas de 6–8 kg.'],
+  'Extensión de cuádriceps': [25, '25 kg en la máquina.'],
+  'Curl femoral': [20, '20 kg en la máquina.'],
+  'Elevación de pantorrilla': [0, 'Sin peso, agarrado de algo para el equilibrio. Después, mancuernas de 10 kg.'],
+  'Press de banca': [40, 'Barra + 10 kg por lado. Calienta antes con la barra sola.'],
+  'Press inclinado con mancuernas': [12, 'Mancuernas de 12 kg cada una.'],
+  'Aperturas con mancuernas': [8, 'Mancuernas de 8 kg cada una.'],
+  'Cruces en polea': [10, '10 kg por lado.'],
+  'Fondos en paralelas': [0, 'Con tu peso todavía son muy pesados: usa la máquina de fondos asistida (40–50 kg de ayuda) o haz fondos en banca.'],
+  'Lagartijas': [0, 'Inclinadas: manos en una banca o en una barra a la altura de la cadera. Ve bajando la altura cuando te salgan 12 fácil.'],
+  'Dominadas': [0, 'Usa la máquina de dominadas asistidas con 50–60 kg de ayuda, o haz jalón al pecho mientras tanto.'],
+  'Jalón al pecho': [40, '40 kg en la polea.'],
+  'Remo con barra': [40, 'Barra + 10 kg por lado.'],
+  'Remo con mancuerna': [16, 'Mancuerna de 16 kg.'],
+  'Remo sentado en polea': [40, '40 kg en la polea.'],
+  'Press militar': [25, 'Barra + 2.5 kg por lado. Si es mucho, usa mancuernas de 8–10 kg.'],
+  'Elevaciones laterales': [5, 'Mancuernas de 4–6 kg. Aquí poco peso es lo correcto.'],
+  'Face pull': [15, '15 kg en la polea, con cuerda.'],
+  'Pájaros (deltoide posterior)': [4, 'Mancuernas de 4 kg.'],
+  'Curl con barra': [20, 'Barra Z (unos 10 kg) + 5 kg por lado, o la barra recta de 20 kg sola.'],
+  'Curl martillo': [10, 'Mancuernas de 8–10 kg.'],
+  'Extensión de tríceps en polea': [20, '20 kg en la polea.'],
+  'Press francés': [15, 'Barra Z + 2.5 kg por lado.'],
+  'Plancha': [0, '20–30 segundos. Si cuesta, apoya las rodillas.'],
+  'Crunch': [0, 'Sin peso.'],
+  'Elevación de piernas colgado': [0, 'Empieza subiendo las rodillas al pecho, o acostado en el piso.'],
+  'Caminadora': [0, '5–5.5 km/h con 6–8% de inclinación, 15 min.'],
+  'Bicicleta': [0, 'Resistencia baja-media, 15 min a un ritmo en el que puedas platicar.'],
+  'Saltar la cuerda': [0, 'Con tu peso mejor déjala para más adelante y cuida rodillas y tobillos. Usa caminadora o bici.'],
+};
+const startFor = (exId) => START[exName(exId)] || null;
+
+function placeholder(last, si, reps, exId) {
   const s = last ? last.sets[si] || last.sets[last.sets.length - 1] : null;
   return {
-    w: s && s.w ? fmtNum(s.w) : 'kg',
+    w: s && s.w ? fmtNum(s.w) : (!last && startFor(exId)?.[0]) ? String(startFor(exId)[0]) : 'kg',
     r: s && s.r ? String(s.r) : (String(reps).match(/\d+/)?.[0] || 'reps'),
   };
 }
@@ -524,6 +565,7 @@ function viewWorkout() {
     const info = [];
     if (en.reps) info.push(`Meta: ${en.sets.length}×${esc(en.reps)}`);
     if (last) info.push(`Última vez (${fmtDateShort(last.date)}): ${last.sets.map((s) => `${s.w ? fmtNum(s.w) : '—'}×${s.r}`).join(', ')}`);
+    if (!last && startFor(en.exId)) info.push(`<span style="color:var(--text)">🟢 Para empezar: ${esc(startFor(en.exId)[1])}</span>`);
     if (readyToProgress(last, en)) info.push(`<b style="color:var(--accent)">💡 La vez pasada llegaste al tope de reps: hoy sube un poco de peso</b>`);
     h += `<div class="card">
       <div class="wk-ex-head">
@@ -537,7 +579,7 @@ function viewWorkout() {
       <div class="sets">
         <div class="set-row head"><span>#</span><span>kg</span><span>reps</span><span></span></div>
         ${en.sets.map((s, si) => {
-          const ph = placeholder(last, si, en.reps);
+          const ph = placeholder(last, si, en.reps, en.exId);
           return `<div class="set-row ${s.done ? 'done' : ''}">
             <span class="set-n">${si + 1}</span>
             <input inputmode="decimal" enterkeyhint="next" data-set="${ei}:${si}:w" value="${esc(s.w)}" placeholder="${esc(ph.w)}" aria-label="Peso serie ${si + 1}">
@@ -748,6 +790,7 @@ function exerciseSheet(id) {
     s.body.innerHTML = `<p class="label">${esc(ex.group)}</p><h2>${esc(ex.name)}</h2>
       ${ANIM.has(ex.name) ? `<div class="anim-box" data-anim="${esc(ex.name)}"></div>` : ''}
       ${tips.length ? `<ul class="tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${START[ex.name] ? `<div class="start-box"><b>🟢 Para empezar</b><p>${esc(START[ex.name][1])}</p><p class="muted small">Que te salgan 10–12 reps con buena técnica y te sobren 2–3. Si sobran más, sube; si la técnica falla, baja.</p></div>` : ''}
       <a class="btn" href="${yt}" target="_blank" rel="noopener">▶ Ver videos en YouTube <span class="muted small">(con internet)</span></a>
       ${hasVid
         ? `<p class="label" style="margin-top:18px">Tu video</p><video class="vid" controls playsinline preload="metadata"></video>

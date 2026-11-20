@@ -289,3 +289,5 @@ select.input.sm { padding-right: 32px; text-overflow: ellipsis; }
 .row-btn > span.thumb { flex: none; }
 .wk-ex-head { align-items: center; }
 .wk-ex-head .grow { min-width: 0; }
+.start-box { background: var(--accent-soft); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+.start-box p { margin: 4px 0 0; }

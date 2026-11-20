@@ -1,5 +1,5 @@
 /* Service worker: guarda la app en el cel para que abra sin internet. */
-const CACHE = 'mi-rutina-v4';
+const CACHE = 'mi-rutina-v5';
 const ASSETS = [
   './',
   './index.html',
