@@ -176,6 +176,16 @@ function lastBody(key) {
   return null;
 }
 function firstBody(key) { return state.body.find((b) => b[key] != null) || null; }
+// Proteína diaria: 1.6–2.2 g por kg. Con IMC arriba de 25 se calcula sobre el peso
+// de referencia para la altura (IMC 25), porque el peso total exagera lo necesario.
+function proteinHtml(peso, alt) {
+  let ref = peso, nota = '';
+  if (alt && peso / (alt / 100) ** 2 > 25) {
+    ref = 25 * (alt / 100) ** 2;
+    nota = `<br><span class="muted">Calculada sobre ${Math.round(ref)} kg, el peso de referencia para tu altura.</span>`;
+  }
+  return `<p class="small center" style="margin-top:10px">🥩 Proteína al día: <b>${Math.round(ref * 1.6)}–${Math.round(ref * 2.2)} g</b>${nota}</p>`;
+}
 function imcCat(imc) {
   if (imc < 18.5) return 'bajo';
   if (imc < 25) return 'normal';
@@ -391,7 +401,7 @@ const VIEWS = {
         <div><b>${imc ? fmtNum(imc) : '—'}</b><span>IMC${imc ? ' · ' + imcCat(imc) : ''}</span></div>
       </div>
       ${delta}
-      ${peso != null ? `<p class="small center" style="margin-top:10px">🥩 Proteína para tu meta: <b>${Math.round(peso * 1.8)}–${Math.round(peso * 2.2)} g al día</b></p>` : ''}
+      ${peso != null ? proteinHtml(peso, alt) : ''}
       ${peso != null && grasa != null ? `<p class="muted small center">Masa magra ≈ ${fmtNum(peso * (1 - grasa / 100))} kg · Grasa ≈ ${fmtNum(peso * grasa / 100)} kg</p>` : ''}
       <div class="row between mt"><span class="muted">Altura: <b style="color:var(--text)">${alt ? alt + ' cm' : 'sin registrar'}</b></span>
         <button class="btn sm" data-action="altura">${alt ? 'Cambiar' : 'Agregar altura'}</button></div>
@@ -506,7 +516,7 @@ function readyToProgress(last, en) {
   const top = +m[2];
   return last.sets.length >= en.sets.length && last.sets.every((s) => s.w > 0 && s.r >= top);
 }
-/* Pesos sugeridos para empezar (principiante, ~120 kg de peso corporal).
+/* Pesos sugeridos para empezar (principiante, ~115 kg de peso corporal y 179 cm).
    Son un punto de partida: la idea es que salgan 10-12 reps con buena técnica
    y que todavía te queden 2-3 en el tanque. Cada máquina pesa distinto. */
 const START = {
