@@ -149,6 +149,18 @@ const ANIM = (() => {
   const PULL_BAR = [{ k: 'line', p: [56, 12, 112, 12], w: 4 }];
 
   const S = {
+    'Sentadilla en Smith': {
+      a: { hip: [80, 66], t: -90, hand: [77, 37], foot: [90, 110], eh: [-0.4, 1] },
+      b: { hip: [66, 92], t: -62, hand: [76, 68] },
+      props: [{ k: 'line', p: [70, 4, 70, 110], w: 2 }, { k: 'line', p: [104, 4, 104, 110], w: 2 }, { k: 'plate', at: 'S', off: [-4, -3], r: 10 }],
+      tips: ['Pies un poco más adelante que la barra.', 'Baja recto, con la espalda pegada a la barra y el pecho arriba.', 'Antes de empezar quita los seguros girando la barra; al terminar, gírala para engancharla.'],
+    },
+    'Sentadilla hack': {
+      a: { hip: [72, 63], t: -70, hand: [86, 38], foot: [89, 104], toe: [97, 101], eh: [1, 0], kh: [1, -0.3] },
+      b: { hip: [60, 96], hand: [74, 71] },
+      props: [{ k: 'line', p: [52, 112, 80, 36], w: 6 }, { k: 'line', p: [84, 110, 110, 98], w: 4 }],
+      tips: ['Espalda y cadera pegadas al respaldo todo el tiempo.', 'Pies a la mitad de la plataforma, al ancho de los hombros.', 'Baja hasta que los muslos queden paralelos y empuja con todo el pie.'],
+    },
     'Sentadilla': {
       a: { hip: [80, 66], t: -90, hand: [77, 37], foot: [84, 110], eh: [-0.4, 1] },
       b: { hip: [63, 92], t: -58, hand: [76, 68] },

@@ -79,7 +79,7 @@ const SEED = [
   ['Cruces en polea', 'Pecho'], ['Fondos en paralelas', 'Pecho'], ['Lagartijas', 'Pecho'],
   ['Dominadas', 'Espalda'], ['Jalón al pecho', 'Espalda'], ['Remo con barra', 'Espalda'],
   ['Remo con mancuerna', 'Espalda'], ['Remo sentado en polea', 'Espalda'], ['Peso muerto', 'Espalda'],
-  ['Sentadilla', 'Piernas'], ['Prensa', 'Piernas'], ['Zancadas', 'Piernas'], ['Peso muerto rumano', 'Piernas'],
+  ['Sentadilla', 'Piernas'], ['Sentadilla en Smith', 'Piernas'], ['Sentadilla hack', 'Piernas'], ['Prensa', 'Piernas'], ['Zancadas', 'Piernas'], ['Peso muerto rumano', 'Piernas'],
   ['Extensión de cuádriceps', 'Piernas'], ['Curl femoral', 'Piernas'], ['Hip thrust', 'Piernas'], ['Puente de glúteo', 'Piernas'],
   ['Elevación de pantorrilla', 'Piernas'],
   ['Press militar', 'Hombros'], ['Elevaciones laterales', 'Hombros'], ['Face pull', 'Hombros'],
@@ -108,6 +108,7 @@ const defaultState = () => ({
 function migrate(s) {
   s.profile = { altura: null, descanso: 90, hideInstall: false, ...(s.profile || {}) };
   s.exercises ||= [];
+  for (const [name, group] of SEED) if (!s.exercises.some((e) => e.name === name)) s.exercises.push({ id: uid(), name, group, notes: '', link: '' });
   s.days ||= [];
   s.schedule ||= {};
   for (let i = 0; i < 7; i++) if (!(i in s.schedule)) s.schedule[i] = null;
@@ -133,6 +134,7 @@ const WARMUP = [
   ['Puente de glúteo', 'Puente de glúteo', '10 reps'],
 ];
 // Ejercicios con barra que llevan series de aproximación
+const SMITH = new Set(['Sentadilla en Smith']);
 const BARBELL = new Set(['Sentadilla', 'Peso muerto', 'Peso muerto rumano', 'Press de banca', 'Remo con barra', 'Press militar', 'Hip thrust']);
 // Ejercicios con barra Z (más ligera que la olímpica)
 const EZBAR = new Set(['Curl con barra', 'Press francés']);
@@ -142,6 +144,7 @@ const MACHINE = new Set(['Prensa', 'Extensión de cuádriceps', 'Curl femoral'])
 function barBase(ex) {
   if (!ex) return null;
   if (num(ex.base) != null) return num(ex.base);
+  if (SMITH.has(ex.name)) return 10;
   if (BARBELL.has(ex.name)) return 20;
   if (EZBAR.has(ex.name)) return 10;
   return null;
@@ -150,7 +153,7 @@ function barBase(ex) {
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 function platesText(ex, w) {
   const base = barBase(ex);
-  if (base == null || !(BARBELL.has(ex.name) || EZBAR.has(ex.name)) || !w) return '';
+  if (base == null || !(BARBELL.has(ex.name) || EZBAR.has(ex.name) || SMITH.has(ex.name)) || !w) return '';
   const per = (w - base) / 2;
   if (per < -0.01) return `Menos que la barra (${fmtNum(base)} kg)`;
   if (per < 0.01) return `${fmtNum(w)} kg = barra sola`;
@@ -161,6 +164,8 @@ function platesText(ex, w) {
 }
 // Lo que hay que saber del equipo de cada ejercicio
 function equipInfo(name) {
+  if (SMITH.has(name)) return 'La barra de la Smith tiene contrapeso y se siente de 5 a 15 kg según la marca (a veces trae etiqueta). La app calcula los discos con 10 kg; si sabes cuánto pesa la tuya, escríbelo abajo. Anota el total: barra + discos.';
+  if (name === 'Sentadilla hack') return 'El carro de la hack ya pesa algo (depende de la marca). En la app anota solo los discos que le pongas, y siempre en la misma máquina.';
   if (name === 'Prensa') return 'El carro de la prensa ya pesa algo, normalmente entre 35 y 55 kg según la marca (a veces viene en una etiqueta). En la app anota solo los discos que le pongas, y siempre en la misma máquina.';
   if (EZBAR.has(name)) return 'La barra Z (la chueca) suele pesar entre 7 y 10 kg; las barras cortas de peso fijo traen el peso marcado. Si la tuya pesa distinto, escríbelo abajo.';
   if (BARBELL.has(name)) return 'La barra olímpica pesa 20 kg (hay de 15 kg y barras cortas de peso fijo). En la app el peso es el total: barra + discos. Si usas la máquina Smith, su barra suele sentirse de 5 a 15 kg porque tiene contrapeso: pon abajo lo que diga la etiqueta.';
@@ -580,6 +585,8 @@ function readyToProgress(last, en) {
 const START = {
   'Sentadilla': [40, 'Barra (20 kg) + 10 kg por lado. Si la técnica no sale, empieza con sentadilla goblet con una mancuerna de 16–20 kg.'],
   'Prensa': [60, '60 kg agregados a la máquina. Las primeras semanas debe sentirse fácil.'],
+  'Sentadilla en Smith': [30, 'La barra de la Smith + 10 kg por lado (unos 30 kg en total). La barra se siente de 5 a 15 kg según la máquina.'],
+  'Sentadilla hack': [20, '20 kg agregados (10 kg por lado). El carro ya pesa algo; anota solo los discos.'],
   'Peso muerto': [60, 'Barra + 20 kg por lado, con discos grandes para que la barra quede a buena altura.'],
   'Peso muerto rumano': [40, 'Barra + 10 kg por lado.'],
   'Hip thrust': [40, 'Barra + 10 kg por lado, con almohadilla en la cadera. Si se te complica acomodarte, haz puente de glúteo en el piso.'],
@@ -897,7 +904,7 @@ function exerciseSheet(id) {
       ${equipInfo(ex.name) || barBase(ex) != null ? `<h3>Mi máquina / equipo</h3>
         ${equipInfo(ex.name) ? `<p class="muted small">${esc(equipInfo(ex.name))}</p>` : ''}` : '<h3>Mi máquina / equipo</h3>'}
       <div class="grid2">
-        ${BARBELL.has(ex.name) || EZBAR.has(ex.name) || ex.name === 'Prensa' ? `<label class="field"><span>${ex.name === 'Prensa' ? 'Peso del carro (kg)' : 'Peso de tu barra (kg)'}</span>
+        ${BARBELL.has(ex.name) || EZBAR.has(ex.name) || SMITH.has(ex.name) || ex.name === 'Prensa' || ex.name === 'Sentadilla hack' ? `<label class="field"><span>${ex.name === 'Prensa' || ex.name === 'Sentadilla hack' ? 'Peso del carro (kg)' : 'Peso de tu barra (kg)'}</span>
           <input class="input" inputmode="decimal" data-f="base" value="${ex.base ?? ''}" placeholder="${barBase(ex) ?? 'Ej. 45'}"></label>` : ''}
         <label class="field" style="grid-column: 1 / -1"><span>Tus ajustes (asiento, respaldo, agarre, polea…)</span>
           <input class="input" data-f="setup" value="${esc(ex.setup || '')}" placeholder="Ej. asiento 4, respaldo 2, agarre abierto"></label>
