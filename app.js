@@ -763,6 +763,14 @@ function finishWorkout() {
 /* ---------- temporizador de descanso ---------- */
 const rest = { end: 0, total: 0, fired: false };
 let audioCtx;
+// Ejercicios chicos (aislamiento): 1 min. Los demás (multiarticulares): 2 min.
+const SHORT_REST = new Set(['Curl con barra', 'Curl martillo', 'Extensión de tríceps en polea', 'Press francés', 'Elevaciones laterales',
+  'Face pull', 'Pájaros (deltoide posterior)', 'Aperturas con mancuernas', 'Cruces en polea', 'Extensión de cuádriceps', 'Curl femoral',
+  'Elevación de pantorrilla', 'Crunch', 'Plancha', 'Elevación de piernas colgado', 'Puente de glúteo']);
+function restFor(exId) {
+  if (state.profile.restMode === 'fixed') return state.profile.descanso || 90;
+  return SHORT_REST.has(exName(exId)) ? 60 : 120;
+}
 function startRest(sec = state.profile.descanso || 90) {
   try {
     audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -1128,8 +1136,15 @@ async function settingsSheet() {
         <button class="chip ${unit() === 'lb' ? 'on' : ''}" data-action="unit" data-u="lb">Libras (lb)</button>
       </div>
       <p class="muted small">Lo que ya anotaste se convierte solo. Tu peso corporal se queda en kg.</p></div>
-    <label class="field"><span>Descanso entre series (segundos)</span>
-      <input class="input" inputmode="numeric" data-f="descanso" value="${state.profile.descanso}"></label>
+    <div class="field"><span>Descanso entre series</span>
+      <div class="chips" style="margin-top:0">
+        <button class="chip ${state.profile.restMode !== 'fixed' ? 'on' : ''}" data-action="rest-mode" data-m="auto">Automático</button>
+        <button class="chip ${state.profile.restMode === 'fixed' ? 'on' : ''}" data-action="rest-mode" data-m="fixed">Siempre igual</button>
+      </div>
+      ${state.profile.restMode === 'fixed'
+        ? `<label class="field"><span>Segundos</span><input class="input" inputmode="numeric" data-f="descanso" value="${state.profile.descanso}"></label>`
+        : `<p class="muted small">2 min en los ejercicios pesados (sentadilla, press, remo, prensa…) y 1 min en los chicos (curl, tríceps, laterales, abdomen).</p>`}
+    </div>
     <h3>Respaldo</h3>
     <p class="muted small">Todo vive solo en este cel. Si borras la app o cambias de cel, se pierde. Haz un respaldo de vez en cuando y guárdalo (WhatsApp, Drive, correo…). Los videos no van en el respaldo.</p>
     <div class="row gap"><button class="btn" data-action="export">Guardar respaldo</button><button class="btn" data-action="import">Cargar respaldo</button></div>
@@ -1149,6 +1164,12 @@ async function settingsSheet() {
     },
     actions: {
       export: exportData,
+      'rest-mode'(el) {
+        state.profile.restMode = el.dataset.m;
+        persist();
+        closeSheet();
+        settingsSheet();
+      },
       unit(el) {
         state.profile.unit = el.dataset.u;
         persist();
@@ -1339,7 +1360,7 @@ const ACTIONS = {
       if (s.w === '' && num(wi.placeholder) != null) { s.w = wi.placeholder; s.u = unit(); }
       if (s.r === '' && num(ri.placeholder) != null) s.r = ri.placeholder;
       s.done = true;
-      startRest();
+      startRest(restFor(state.active.entries[ei].exId));
     } else {
       s.done = false;
     }

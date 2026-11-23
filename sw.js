@@ -1,6 +1,6 @@
 /* Service worker: guarda la app en el cel para que abra sin internet.
    Con internet siempre carga la versión más nueva; sin internet usa la guardada. */
-const CACHE = 'mi-rutina-v18';
+const CACHE = 'mi-rutina-v19';
 const ASSETS = [
   './',
   './index.html',
