@@ -291,3 +291,8 @@ select.input.sm { padding-right: 32px; text-overflow: ellipsis; }
 .wk-ex-head .grow { min-width: 0; }
 .start-box { background: var(--accent-soft); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
 .start-box p { margin: 4px 0 0; }
+.how-btn { margin-top: 12px; min-height: 44px; background: var(--accent-soft); color: var(--accent); }
+.how { margin-top: 10px; }
+.how .anim-box { margin-top: 0; }
+.thumb { position: relative; width: 88px; height: 66px; }
+button.thumb::after { content: "▶"; position: absolute; right: 4px; bottom: 3px; font-size: 10px; color: var(--accent); }

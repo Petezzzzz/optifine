@@ -122,7 +122,7 @@ function migrate(s) {
 let state = defaultState();
 let videoIds = new Set();
 let storageOk = true;
-const ui = { tab: 'hoy', exQ: '', exGroup: 'Todos', metric: 'peso' };
+const ui = { tab: 'hoy', exQ: '', exGroup: 'Todos', metric: 'peso', how: new Set() };
 
 async function load() {
   try {
@@ -587,6 +587,11 @@ function viewWorkout() {
           <button class="icon-btn sm" data-action="wk-remove-ex" data-ei="${ei}" aria-label="Quitar ejercicio">✕</button>
         </div>
       </div>
+      ${ANIM.has(exName(en.exId)) ? (ui.how.has(en.exId)
+        ? `<div class="how"><div class="anim-box" data-anim="${esc(exName(en.exId))}"></div>
+            <ul class="tips">${ANIM.tips(exName(en.exId)).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+            <button class="btn sm ghost" data-action="how" data-id="${en.exId}">Ocultar</button></div>`
+        : `<button class="btn how-btn" data-action="how" data-id="${en.exId}">▶ Ver cómo se hace</button>`) : ''}
       <div class="sets">
         <div class="set-row head"><span>#</span><span>kg</span><span>reps</span><span></span></div>
         ${en.sets.map((s, si) => {
@@ -1161,6 +1166,7 @@ const ACTIONS = {
     startWorkout(el.dataset.day);
   },
   'ex-open'(el) { exerciseSheet(el.dataset.id); },
+  how(el) { const id = el.dataset.id; if (ui.how.has(id)) ui.how.delete(id); else ui.how.add(id); render(true); },
   'ex-new'() { editExerciseSheet(null, (ex) => exerciseSheet(ex.id)); },
   'ex-group'(el) { ui.exGroup = el.dataset.g; render(true); },
   'set-done'(el) {
