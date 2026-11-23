@@ -92,7 +92,7 @@ const SEED = [
   ['Cruces en polea', 'Pecho'], ['Fondos en paralelas', 'Pecho'], ['Lagartijas', 'Pecho'],
   ['Dominadas', 'Espalda'], ['Jalón al pecho', 'Espalda'], ['Remo con barra', 'Espalda'],
   ['Remo con mancuerna', 'Espalda'], ['Remo sentado en polea', 'Espalda'], ['Peso muerto', 'Espalda'],
-  ['Sentadilla', 'Piernas'], ['Sentadilla en Smith', 'Piernas'], ['Sentadilla hack', 'Piernas'], ['Prensa', 'Piernas'], ['Zancadas', 'Piernas'], ['Peso muerto rumano', 'Piernas'],
+  ['Sentadilla', 'Piernas'], ['Sentadilla goblet', 'Piernas'], ['Sentadilla en Smith', 'Piernas'], ['Sentadilla hack', 'Piernas'], ['Prensa', 'Piernas'], ['Zancadas', 'Piernas'], ['Peso muerto rumano', 'Piernas'],
   ['Extensión de cuádriceps', 'Piernas'], ['Curl femoral', 'Piernas'], ['Hip thrust', 'Piernas'], ['Puente de glúteo', 'Piernas'],
   ['Elevación de pantorrilla', 'Piernas'],
   ['Press militar', 'Hombros'], ['Elevaciones laterales', 'Hombros'], ['Face pull', 'Hombros'],
@@ -142,6 +142,7 @@ const ui = { tab: 'hoy', exQ: '', exGroup: 'Todos', metric: 'peso', how: new Set
 const WARMUP = [
   ['Caminadora', 'Caminadora o bici suave', '5 min a ritmo cómodo'],
   ['Círculos de brazos', 'Círculos de brazos', '10 adelante y 10 atrás'],
+  ['Dislocaciones con palo', 'Movilidad de hombros con palo', '10 lentas, con las manos bien abiertas'],
   ['Balanceo de piernas', 'Balanceo de piernas', '10 por pierna'],
   ['Sentadilla sin peso', 'Sentadilla sin peso', '10 reps'],
   ['Puente de glúteo', 'Puente de glúteo', '10 reps'],
@@ -277,7 +278,7 @@ const TEMPLATES = {
     desc: 'Lunes, miércoles y viernes. Todo el cuerpo cada día en rangos de hipertrofia, y 15 min de cardio al final.',
     days: [
       ['Full body A', [
-        ['Sentadilla', 4, '6-10'], ['Press de banca', 4, '6-10'], ['Remo con barra', 3, '8-12'],
+        ['Sentadilla goblet', 4, '8-12'], ['Press de banca', 4, '6-10'], ['Remo con barra', 3, '8-12'],
         ['Press militar', 3, '8-12'], ['Curl femoral', 3, '10-15'], ['Plancha', 3, '45 s'],
         ['Caminadora', 1, '15 min'],
       ]],
@@ -601,7 +602,8 @@ function readyToProgress(last, en) {
    Son un punto de partida: la idea es que salgan 10-12 reps con buena técnica
    y que todavía te queden 2-3 en el tanque. Cada máquina pesa distinto. */
 const START = {
-  'Sentadilla': [40, 'Barra (20 kg) + 10 kg por lado. Si la técnica no sale, empieza con sentadilla goblet con una mancuerna de 16–20 kg.'],
+  'Sentadilla': [40, 'Barra (20 kg) + 10 kg por lado. Si no alcanzas a agarrar la barra en la espalda, agárrala más abierta o haz sentadilla goblet mientras ganas movilidad.'],
+  'Sentadilla goblet': [16, 'Una mancuerna de 16 kg agarrada de una punta, pegada al pecho. Si se siente pesada, empieza con 12 kg.'],
   'Prensa': [60, '60 kg agregados a la máquina. Las primeras semanas debe sentirse fácil.'],
   'Sentadilla en Smith': [30, 'La barra de la Smith + 10 kg por lado (unos 30 kg en total). La barra se siente de 5 a 15 kg según la máquina.'],
   'Sentadilla hack': [20, '20 kg agregados (10 kg por lado). El carro ya pesa algo; anota solo los discos.'],

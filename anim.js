@@ -207,6 +207,23 @@ const ANIM = (() => {
       b: { hip: [63, 92], t: -58, hand: [104, 66] },
       tips: ['Brazos al frente para equilibrarte.', 'Baja lento hasta donde puedas con la espalda recta.', 'Sube apretando glúteos.'],
     },
+    'Sentadilla goblet': {
+      a: { hip: [80, 66], t: -90, hand: [86, 44], foot: [84, 110], eh: [0.3, 1] },
+      b: { hip: [64, 92], t: -60, hand: [86, 72] },
+      props: [{ k: 'plate', at: 'hand', r: 5 }],
+      tips: ['Agarra una mancuerna de una punta, pegada al pecho.', 'Baja entre las rodillas con el pecho arriba y los codos adentro.', 'Sube empujando con todo el pie. No necesitas abrir los brazos.'],
+    },
+    'Dislocaciones con palo': {
+      front: true, ms: 3200,
+      fn(t) {
+        // brazos estirados y abiertos: de abajo hasta arriba de la cabeza y de regreso
+        const u = 0.5 - 0.5 * Math.cos(2 * Math.PI * t);
+        const ang = (75 - 150 * u) * Math.PI / 180;
+        return { hip: [80, 66], t: -90, hand: [89 + 33 * Math.cos(ang), 36 + 33 * Math.sin(ang)], foot: [86, 110], eh: [1, 0] };
+      },
+      over(sk) { return `<line x1="${sk.far.hand[0].toFixed(1)}" y1="${sk.far.hand[1].toFixed(1)}" x2="${sk.hand[0].toFixed(1)}" y2="${sk.hand[1].toFixed(1)}" stroke-width="3" class="eq"/>`; },
+      tips: ['Usa un palo de escoba o una liga, con las manos bien abiertas.', 'Con los brazos estirados, súbelo despacio por arriba de la cabeza y regrésalo.', 'Si duele, abre más las manos. Con el tiempo las vas cerrando.'],
+    },
     'Círculos de brazos': {
       front: true, ms: 1100,
       fn(t) {
