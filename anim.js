@@ -417,7 +417,7 @@ const ANIM = (() => {
         return { hip: [80, 64 - bob], t: -86, hand: [82 - 10 * Math.sin(ph), 64 - bob], fhand: [82 + 10 * Math.sin(ph), 64 - bob], foot: ft, toe: tt, ffoot: fft, ftoe: ftt, eh: [0.3, 1], kh: [1, 0] };
       },
       props: [{ k: 'rect', p: [34, 106, 98, 6] }, { k: 'line', p: [126, 106, 118, 56], w: 4 }, { k: 'line', p: [118, 56, 104, 60], w: 3 }],
-      tips: ['Camina con la caminadora inclinada (8–12%) a paso rápido.', 'No te agarres de los barandales.', '15 min al final del entrenamiento.'],
+      tips: ['Sube la inclinación (botón Incline) a 6–8; en Matrix ese número ya es el %.', 'Velocidad 5–5.5 km/h (3.1–3.4 mph) a paso rápido, sin agarrarte de los barandales.', '15 min al final del entrenamiento.'],
     },
     'Bicicleta': {
       ms: 1100,

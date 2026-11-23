@@ -140,7 +140,7 @@ const ui = { tab: 'hoy', exQ: '', exGroup: 'Todos', metric: 'peso', how: new Set
 
 /* Calentamiento general (unos 8 min) antes de cada entrenamiento */
 const WARMUP = [
-  ['Caminadora', 'Caminadora o bici suave', '5 min a ritmo cómodo'],
+  ['Caminadora', 'Caminadora o bici suave', '5 min a ritmo cómodo, sin inclinación'],
   ['Círculos de brazos', 'Círculos de brazos', '10 adelante y 10 atrás'],
   ['Dislocaciones con palo', 'Movilidad de hombros con palo', '10 lentas, con las manos bien abiertas'],
   ['Balanceo de piernas', 'Balanceo de piernas', '10 por pierna'],
@@ -640,7 +640,7 @@ const START = {
   'Plancha': [0, '20–30 segundos. Si cuesta, apoya las rodillas.'],
   'Crunch': [0, 'Sin peso.'],
   'Elevación de piernas colgado': [0, 'Empieza subiendo las rodillas al pecho, o acostado en el piso.'],
-  'Caminadora': [0, '5–5.5 km/h con 6–8% de inclinación, 15 min.'],
+  'Caminadora': [0, 'Velocidad (Speed) 5–5.5 km/h o 3.1–3.4 mph, inclinación (Incline) en 6–8, 15 min. En las Matrix el número de Incline ya es el %.'],
   'Bicicleta': [0, 'Resistencia baja-media, 15 min a un ritmo en el que puedas platicar.'],
   'Saltar la cuerda': [0, 'Con tu peso mejor déjala para más adelante y cuida rodillas y tobillos. Usa caminadora o bici.'],
 };
