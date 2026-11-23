@@ -9,6 +9,7 @@ App de gimnasio para el cel que **funciona sin internet**. Todo se guarda en el 
 - **Calentamiento** de 8 min con animaciones al inicio de cada entrenamiento, y series de aproximación en los ejercicios con barra.
 - **Recuerda tus máquinas**: peso de tu barra o carro y tus ajustes (asiento, respaldo, agarre), y te dice qué discos poner por lado.
 - **Kilos o libras**: se elige en Ajustes; todo se convierte solo y la calculadora de discos usa discos de libras.
+- **Botón ⇄ Cambiar**: si un aparato está ocupado, te sugiere ejercicios parecidos y lo cambias en 2 toques.
 - **Te dice cuándo subir peso** (doble progresión): si la vez pasada llegaste al tope del rango de reps en todas las series, te avisa.
 - **Cuerpo**: altura, peso, % de grasa y medidas (cintura, cadera, pecho, brazo, pierna), con IMC, masa magra, proteína diaria sugerida y gráficas.
 - **Progreso**: calendario de las últimas 12 semanas, récords por ejercicio e historial de entrenamientos.

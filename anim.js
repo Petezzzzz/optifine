@@ -329,6 +329,18 @@ const ANIM = (() => {
       props: [{ k: 'rect', p: [40, 98, 40, 5] }, { k: 'line', p: [110, 86, 110, 108], w: 4 }, { k: 'cable', at: 'hand', from: [150, 80] }, { k: 'dot', at: 'hand' }],
       tips: ['Rodillas un poco flexionadas, pecho arriba.', 'Jala hacia el abdomen juntando los omóplatos.', 'Regresa estirando brazos sin encorvarte.'],
     },
+    'Press de banca con mancuernas': {
+      a: { hip: [92, 81], t: 180, hand: [62, 50], foot: [112, 110], kh: [1, -0.8], eh: [0.3, 1] },
+      b: { hand: [68, 74], eh: [0.3, 1] },
+      props: [...FLAT_BENCH, { k: 'db', at: 'hand' }],
+      tips: ['Acuéstate con las mancuernas apoyadas en los muslos y súbelas al pecho al recostarte.', 'Baja a los lados del pecho, codos a unos 45°.', 'Empuja hacia arriba juntándolas sin chocarlas.'],
+    },
+    'Press de hombro con mancuernas': {
+      a: { ...STAND, hand: [88, 38], eh: [0.6, 1] },
+      b: { hand: [82, 6], eh: [0.3, 1] },
+      props: [{ k: 'db', at: 'hand' }],
+      tips: ['Mejor sentado en una banca con respaldo.', 'Empieza con las mancuernas a la altura de las orejas.', 'Sube hasta casi estirar los brazos, sin arquear la espalda.'],
+    },
     'Press militar': {
       a: { ...STAND, hand: [86, 38], eh: [0.6, 1] },
       b: { hand: [80, 6], eh: [0.3, 1] },

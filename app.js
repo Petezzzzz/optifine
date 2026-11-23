@@ -88,14 +88,14 @@ const vidKeys = () => idb('videos', 'readonly', (s) => s.getAllKeys());
    ========================================================= */
 const GROUPS = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio', 'Otro'];
 const SEED = [
-  ['Press de banca', 'Pecho'], ['Press inclinado con mancuernas', 'Pecho'], ['Aperturas con mancuernas', 'Pecho'],
+  ['Press de banca', 'Pecho'], ['Press de banca con mancuernas', 'Pecho'], ['Press inclinado con mancuernas', 'Pecho'], ['Aperturas con mancuernas', 'Pecho'],
   ['Cruces en polea', 'Pecho'], ['Fondos en paralelas', 'Pecho'], ['Lagartijas', 'Pecho'],
   ['Dominadas', 'Espalda'], ['Jalón al pecho', 'Espalda'], ['Remo con barra', 'Espalda'],
   ['Remo con mancuerna', 'Espalda'], ['Remo sentado en polea', 'Espalda'], ['Peso muerto', 'Espalda'],
   ['Sentadilla', 'Piernas'], ['Sentadilla goblet', 'Piernas'], ['Sentadilla en Smith', 'Piernas'], ['Sentadilla hack', 'Piernas'], ['Prensa', 'Piernas'], ['Zancadas', 'Piernas'], ['Peso muerto rumano', 'Piernas'],
   ['Extensión de cuádriceps', 'Piernas'], ['Curl femoral', 'Piernas'], ['Hip thrust', 'Piernas'], ['Puente de glúteo', 'Piernas'],
   ['Elevación de pantorrilla', 'Piernas'],
-  ['Press militar', 'Hombros'], ['Elevaciones laterales', 'Hombros'], ['Face pull', 'Hombros'],
+  ['Press militar', 'Hombros'], ['Press de hombro con mancuernas', 'Hombros'], ['Elevaciones laterales', 'Hombros'], ['Face pull', 'Hombros'],
   ['Pájaros (deltoide posterior)', 'Hombros'],
   ['Curl con barra', 'Brazos'], ['Curl martillo', 'Brazos'], ['Extensión de tríceps en polea', 'Brazos'],
   ['Press francés', 'Brazos'],
@@ -188,6 +188,7 @@ function equipInfo(name) {
   if (name === 'Prensa') return 'El carro de la prensa ya pesa algo, normalmente entre 35 y 55 kg según la marca (a veces viene en una etiqueta). En la app anota solo los discos que le pongas, y siempre en la misma máquina.';
   if (EZBAR.has(name)) return 'La barra Z (la chueca) suele pesar entre 7 y 10 kg; las barras cortas de peso fijo traen el peso marcado. Si la tuya pesa distinto, escríbelo abajo.';
   if (BARBELL.has(name)) return 'La barra olímpica pesa 20 kg (hay de 15 kg y barras cortas de peso fijo). En la app el peso es el total: barra + discos. Si usas la máquina Smith, su barra suele sentirse de 5 a 15 kg porque tiene contrapeso: pon abajo lo que diga la etiqueta.';
+  if (/mancuerna|Curl martillo|Elevaciones laterales|Pájaros/.test(name)) return 'Anota el peso de una sola mancuerna (no la suma de las dos).';
   if (CABLE.has(name)) return 'En las poleas el número de la pila cambia entre máquinas: las poleas dobles (como las de cruces) suelen ir 2 a 1 y se sienten como la mitad. Compara tus pesos siempre en la misma máquina.';
   if (MACHINE.has(name)) return 'Cada marca de máquina pesa distinto. Usa siempre la misma y anota abajo tu ajuste de asiento y rodillo para no batallar cada vez.';
   return '';
@@ -616,6 +617,8 @@ const START = {
   'Curl femoral': [20, '20 kg en la máquina.'],
   'Elevación de pantorrilla': [0, 'Sin peso, agarrado de algo para el equilibrio. Después, mancuernas de 10 kg.'],
   'Press de banca': [40, 'Barra + 10 kg por lado. Calienta antes con la barra sola.'],
+  'Press de banca con mancuernas': [14, 'Mancuernas de 14 kg cada una. Si se sienten pesadas, 12 kg.'],
+  'Press de hombro con mancuernas': [10, 'Mancuernas de 10 kg cada una, sentado con respaldo. Si es mucho, 8 kg.'],
   'Press inclinado con mancuernas': [12, 'Mancuernas de 12 kg cada una.'],
   'Aperturas con mancuernas': [8, 'Mancuernas de 8 kg cada una.'],
   'Cruces en polea': [10, '10 kg por lado.'],
@@ -695,6 +698,7 @@ function viewWorkout() {
         <div class="grow"><h3>${esc(exName(en.exId))}</h3>${info.length ? `<p class="muted small">${info.join('<br>')}</p>` : ''}</div>
         <div class="row gap">
           ${videoIds.has(en.exId) || !ANIM.has(exName(en.exId)) ? `<button class="icon-btn sm" data-action="ex-open" data-id="${en.exId}" aria-label="Ver video y notas">${videoIds.has(en.exId) ? '▶︎' : 'i'}</button>` : ''}
+          <button class="icon-btn sm" data-action="wk-swap" data-ei="${ei}" aria-label="Cambiar por otro ejercicio">⇄</button>
           <button class="icon-btn sm" data-action="wk-remove-ex" data-ei="${ei}" aria-label="Quitar ejercicio">✕</button>
         </div>
       </div>
@@ -849,8 +853,49 @@ function revokeVideos(root) {
 }
 const sheetFor = (el) => { const w = el.closest('.sheet-wrap'); return w ? sheets.find((s) => s.el === w) : null; };
 
-function pickExercise(onPick) {
-  const s = openSheet(`<h2>Elegir ejercicio</h2>
+/* Ejercicios parecidos: para cambiar cuando el aparato está ocupado */
+const ALT = {
+  'Press de banca': ['Press de banca con mancuernas', 'Press inclinado con mancuernas', 'Lagartijas', 'Cruces en polea'],
+  'Press de banca con mancuernas': ['Press de banca', 'Press inclinado con mancuernas', 'Lagartijas'],
+  'Press inclinado con mancuernas': ['Press de banca con mancuernas', 'Press de banca', 'Aperturas con mancuernas'],
+  'Lagartijas': ['Press de banca con mancuernas', 'Press de banca'],
+  'Fondos en paralelas': ['Lagartijas', 'Extensión de tríceps en polea'],
+  'Sentadilla': ['Sentadilla goblet', 'Sentadilla hack', 'Sentadilla en Smith', 'Prensa'],
+  'Sentadilla goblet': ['Sentadilla hack', 'Sentadilla en Smith', 'Prensa', 'Zancadas'],
+  'Sentadilla hack': ['Sentadilla en Smith', 'Sentadilla goblet', 'Prensa'],
+  'Sentadilla en Smith': ['Sentadilla hack', 'Sentadilla goblet', 'Prensa'],
+  'Prensa': ['Sentadilla hack', 'Sentadilla goblet', 'Sentadilla en Smith'],
+  'Zancadas': ['Sentadilla goblet', 'Prensa'],
+  'Peso muerto': ['Peso muerto rumano', 'Hip thrust'],
+  'Peso muerto rumano': ['Peso muerto', 'Curl femoral'],
+  'Hip thrust': ['Puente de glúteo'],
+  'Puente de glúteo': ['Hip thrust'],
+  'Curl femoral': ['Peso muerto rumano'],
+  'Extensión de cuádriceps': ['Zancadas', 'Prensa'],
+  'Remo con barra': ['Remo con mancuerna', 'Remo sentado en polea'],
+  'Remo con mancuerna': ['Remo con barra', 'Remo sentado en polea'],
+  'Remo sentado en polea': ['Remo con mancuerna', 'Remo con barra'],
+  'Jalón al pecho': ['Dominadas', 'Remo sentado en polea'],
+  'Dominadas': ['Jalón al pecho'],
+  'Press militar': ['Press de hombro con mancuernas'],
+  'Press de hombro con mancuernas': ['Press militar'],
+  'Face pull': ['Pájaros (deltoide posterior)'],
+  'Pájaros (deltoide posterior)': ['Face pull'],
+  'Curl con barra': ['Curl martillo'],
+  'Curl martillo': ['Curl con barra'],
+  'Extensión de tríceps en polea': ['Press francés', 'Fondos en paralelas'],
+  'Press francés': ['Extensión de tríceps en polea'],
+  'Caminadora': ['Bicicleta'],
+  'Bicicleta': ['Caminadora'],
+};
+
+function pickExercise(onPick, suggestFor) {
+  const sug = (ALT[suggestFor] || []).map((n) => state.exercises.find((e) => e.name === n)).filter(Boolean);
+  const s = openSheet(`<h2>${suggestFor ? `Cambiar ${esc(suggestFor)}` : 'Elegir ejercicio'}</h2>
+    ${sug.length ? `<p class="group-title">Parecidos (por si está ocupado)</p><ul class="list">
+      ${sug.map((e) => `<li><button class="row-btn" data-action="pick" data-id="${e.id}">
+        ${ANIM.has(e.name) ? `<span class="thumb sm" data-anim="${esc(e.name)}"></span>` : ''}<span class="grow">${esc(e.name)}</span><span class="muted">›</span></button></li>`).join('')}</ul>
+      <p class="group-title">O cualquier otro</p>` : ''}
     <input class="input" type="search" placeholder="Buscar ejercicio…" data-q style="margin-top:12px">
     <div class="pick-list"></div>
     <button class="btn mt" data-action="new">+ Crear ejercicio nuevo</button>`, {
@@ -862,6 +907,7 @@ function pickExercise(onPick) {
   });
   const fill = (q) => { $('.pick-list', s.el).innerHTML = exerciseListHtml(q, 'Todos', 'pick'); };
   fill('');
+  ANIM.mountAll(s.body);
 }
 
 function editExerciseSheet(ex, cb) {
@@ -1383,6 +1429,19 @@ const ACTIONS = {
     if (en.sets.some((s) => s.done) && !confirm(`¿Quitar ${exName(en.exId)} de este entrenamiento?`)) return;
     state.active.entries.splice(+el.dataset.ei, 1);
     persist(); render(true);
+  },
+  'wk-swap'(el) {
+    const ei = +el.dataset.ei;
+    const en = state.active.entries[ei];
+    pickExercise((exId) => {
+      const old = exName(en.exId);
+      // mismo número de series y reps; los pesos se vacían porque es otro ejercicio
+      state.active.entries[ei] = { ...newEntry(exId, en.sets.length, en.reps), sets: en.sets.map((st) => ({ w: '', r: '', done: false })) };
+      ui.how.delete(en.exId);
+      persist();
+      render(true);
+      toast(`Listo: ${exName(exId)} en lugar de ${old}`);
+    }, exName(en.exId));
   },
   'wk-add-ex'() {
     pickExercise((exId) => { state.active.entries.push(newEntry(exId, 3, '')); persist(); render(true); setTimeout(() => scrollTo(0, document.body.scrollHeight), 50); });
