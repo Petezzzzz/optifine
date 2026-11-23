@@ -134,6 +134,41 @@ const WARMUP = [
 ];
 // Ejercicios con barra que llevan series de aproximación
 const BARBELL = new Set(['Sentadilla', 'Peso muerto', 'Peso muerto rumano', 'Press de banca', 'Remo con barra', 'Press militar', 'Hip thrust']);
+// Ejercicios con barra Z (más ligera que la olímpica)
+const EZBAR = new Set(['Curl con barra', 'Press francés']);
+const CABLE = new Set(['Jalón al pecho', 'Remo sentado en polea', 'Face pull', 'Extensión de tríceps en polea', 'Cruces en polea']);
+const MACHINE = new Set(['Prensa', 'Extensión de cuádriceps', 'Curl femoral']);
+// Lo que pesa la barra si el usuario no ha dicho otra cosa
+function barBase(ex) {
+  if (!ex) return null;
+  if (num(ex.base) != null) return num(ex.base);
+  if (BARBELL.has(ex.name)) return 20;
+  if (EZBAR.has(ex.name)) return 10;
+  return null;
+}
+// Qué discos poner por lado: "40 kg = barra 20 + 10 por lado"
+const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+function platesText(ex, w) {
+  const base = barBase(ex);
+  if (base == null || !(BARBELL.has(ex.name) || EZBAR.has(ex.name)) || !w) return '';
+  const per = (w - base) / 2;
+  if (per < -0.01) return `Menos que la barra (${fmtNum(base)} kg)`;
+  if (per < 0.01) return `${fmtNum(w)} kg = barra sola`;
+  let left = per;
+  const used = [];
+  for (const p of PLATES) while (left >= p - 0.001) { used.push(p); left -= p; }
+  return `${fmtNum(w)} kg = barra ${fmtNum(base)} + por lado: ${used.map((x) => fmtNum(x, 2)).join(' + ')}${left > 0.01 ? ' (aprox.)' : ''}`;
+}
+// Lo que hay que saber del equipo de cada ejercicio
+function equipInfo(name) {
+  if (name === 'Prensa') return 'El carro de la prensa ya pesa algo, normalmente entre 35 y 55 kg según la marca (a veces viene en una etiqueta). En la app anota solo los discos que le pongas, y siempre en la misma máquina.';
+  if (EZBAR.has(name)) return 'La barra Z (la chueca) suele pesar entre 7 y 10 kg; las barras cortas de peso fijo traen el peso marcado. Si la tuya pesa distinto, escríbelo abajo.';
+  if (BARBELL.has(name)) return 'La barra olímpica pesa 20 kg (hay de 15 kg y barras cortas de peso fijo). En la app el peso es el total: barra + discos. Si usas la máquina Smith, su barra suele sentirse de 5 a 15 kg porque tiene contrapeso: pon abajo lo que diga la etiqueta.';
+  if (CABLE.has(name)) return 'En las poleas el número de la pila cambia entre máquinas: las poleas dobles (como las de cruces) suelen ir 2 a 1 y se sienten como la mitad. Compara tus pesos siempre en la misma máquina.';
+  if (MACHINE.has(name)) return 'Cada marca de máquina pesa distinto. Usa siempre la misma y anota abajo tu ajuste de asiento y rodillo para no batallar cada vez.';
+  return '';
+}
+
 function warmSets(w) {
   if (!w || w <= 25) return null;
   const r = (x) => Math.round(x / 2.5) * 2.5;
@@ -613,6 +648,11 @@ function viewWorkout() {
     if (en.reps) info.push(`Meta: ${en.sets.length}×${esc(en.reps)}`);
     if (last) info.push(`Última vez (${fmtDateShort(last.date)}): ${last.sets.map((s) => `${s.w ? fmtNum(s.w) : '—'}×${s.r}`).join(', ')}`);
     if (!last && startFor(en.exId)) info.push(`<span style="color:var(--text)">🟢 Para empezar: ${esc(startFor(en.exId)[1])}</span>`);
+    const exo = exById(en.exId);
+    if (exo?.setup) info.push(`<span style="color:var(--text)">⚙️ Tu ajuste: ${esc(exo.setup)}</span>`);
+    const firstW = num(en.sets[0]?.w) ?? num(placeholder(last, 0, en.reps, en.exId).w);
+    const pt = platesText(exo, firstW);
+    if (pt) info.push(`<span class="plates" data-plates="${ei}">🏋️ ${esc(pt)}</span>`);
     if (BARBELL.has(exName(en.exId))) {
       const ws = warmSets(num(en.sets[0]?.w) ?? num(placeholder(last, 0, en.reps, en.exId).w));
       if (ws) info.push(`<span class="warm-sets">🔥 Antes calienta: ${ws} <span class="muted">(no cuentan)</span></span>`);
@@ -815,7 +855,8 @@ function exerciseSheet(id) {
   const s = openSheet('', {
     onInput(t) {
       const f = t.dataset.f;
-      if (f === 'notes' || f === 'link') { ex[f] = t.value; persist(); }
+      if (f === 'notes' || f === 'link' || f === 'setup') { ex[f] = t.value; persist(); }
+      if (f === 'base') { ex.base = num(t.value); persist(); }
     },
     actions: {
       'vid-add'() { pickVideo(ex.id, draw); },
@@ -853,6 +894,14 @@ function exerciseSheet(id) {
            <div class="row gap"><button class="btn sm" data-action="vid-add">Cambiar video</button><button class="btn sm ghost danger" data-action="vid-del">Quitar video</button></div>`
         : `<button class="vid-empty" data-action="vid-add"><span>🎥</span><b>Agregar tu propio video</b>
            <small>Grábalo o elígelo de tu galería (o descárgalo de YouTube). Se guarda en tu cel y lo ves sin internet.</small></button>`}
+      ${equipInfo(ex.name) || barBase(ex) != null ? `<h3>Mi máquina / equipo</h3>
+        ${equipInfo(ex.name) ? `<p class="muted small">${esc(equipInfo(ex.name))}</p>` : ''}` : '<h3>Mi máquina / equipo</h3>'}
+      <div class="grid2">
+        ${BARBELL.has(ex.name) || EZBAR.has(ex.name) || ex.name === 'Prensa' ? `<label class="field"><span>${ex.name === 'Prensa' ? 'Peso del carro (kg)' : 'Peso de tu barra (kg)'}</span>
+          <input class="input" inputmode="decimal" data-f="base" value="${ex.base ?? ''}" placeholder="${barBase(ex) ?? 'Ej. 45'}"></label>` : ''}
+        <label class="field" style="grid-column: 1 / -1"><span>Tus ajustes (asiento, respaldo, agarre, polea…)</span>
+          <input class="input" data-f="setup" value="${esc(ex.setup || '')}" placeholder="Ej. asiento 4, respaldo 2, agarre abierto"></label>
+      </div>
       <label class="field"><span>Notas de técnica</span><textarea class="input" rows="3" data-f="notes" placeholder="Ej. codos a 45°, bajar lento, apretar arriba…">${esc(ex.notes)}</textarea></label>
       <label class="field"><span>Enlace a video en internet (opcional)</span><input class="input" type="url" data-f="link" value="${esc(ex.link)}" placeholder="https://youtube.com/…"></label>
       ${goodLink ? `<a class="btn sm" href="${esc(ex.link)}" target="_blank" rel="noopener">Abrir enlace ↗</a>` : ''}
@@ -1308,7 +1357,12 @@ function onField(e) {
   if (t.dataset.set && state.active) {
     const [ei, si, f] = t.dataset.set.split(':');
     const set = state.active.entries[ei]?.sets[si];
-    if (set) { set[f] = t.value; persist(); }
+    if (set) {
+      set[f] = t.value;
+      persist();
+      const pl = document.querySelector(`[data-plates="${ei}"]`);
+      if (f === 'w' && pl && num(t.value)) pl.textContent = '🏋️ ' + platesText(exById(state.active.entries[ei].exId), num(t.value));
+    }
   } else if (t.dataset.sched !== undefined) {
     state.schedule[t.dataset.sched] = t.value || null;
     persist();

@@ -69,7 +69,7 @@ main {
   padding: 16px; margin: 12px 0;
 }
 .card.flat { background: transparent; border: 1px dashed var(--line); }
-.kicker { color: var(--muted); font-weight: 600; text-transform: capitalize; margin: 2px 0 0; }
+.kicker { color: var(--muted); font-weight: 600; margin: 2px 0 0; }
 .label { color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 4px; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
@@ -305,3 +305,4 @@ button.thumb::after { content: "▶"; position: absolute; right: 4px; bottom: 3p
 .warm-row.done .check { background: var(--accent); color: var(--accent-ink); }
 .warm-row.done .warm-txt b { color: var(--muted); text-decoration: line-through; }
 .warm-sets { color: #ffb86b; }
+.plates { color: var(--text); font-variant-numeric: tabular-nums; }
