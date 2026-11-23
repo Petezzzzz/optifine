@@ -1099,7 +1099,7 @@ async function settingsSheet() {
     <p class="muted small" data-usage></p>
     <h3>Actualizaciones</h3>
     <p class="muted small">Cuando haya una versión nueva te sale un aviso arriba. Tus datos no se borran al actualizar. <span data-version></span></p>
-    <button class="btn" data-action="check-update">Buscar actualización</button>
+    <button class="btn" data-action="check-update">🔄 Actualizar app</button>
     <h3>Instalar en tu cel</h3>
     <p class="muted small"><b>iPhone:</b> abre la página en Safari → botón Compartir → “Agregar a pantalla de inicio”.<br>
     <b>Android:</b> abre la página en Chrome → menú ⋮ → “Instalar app”.<br>
@@ -1252,7 +1252,6 @@ function toast(msg) {
 const ACTIONS = {
   tab(el) { ui.tab = el.dataset.tab; render(); },
   settings: settingsSheet,
-  update: checkUpdate,
   'load-fullbody'() {
     if (state.days.length && !confirm('¿Reemplazar tu rutina actual?')) return;
     loadTemplate('fullbody'); render(); toast('Full body lista ✅ Lunes, miércoles y viernes');
@@ -1404,7 +1403,7 @@ function showUpdate() {
   document.body.appendChild(b);
 }
 async function checkUpdate() {
-  const btn = $('[data-action="update"]');
+  const btn = $('[data-action="check-update"]');
   btn?.classList.add('spin');
   const done = () => btn?.classList.remove('spin');
   try {
