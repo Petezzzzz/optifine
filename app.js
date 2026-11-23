@@ -32,6 +32,19 @@ const fmtClock = (sec) => {
 };
 const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const clone = (o) => JSON.parse(JSON.stringify(o));
+
+/* Unidades: todo se guarda en kg; se muestra y se anota en kg o lb según Ajustes. */
+const LB = 2.20462;
+const unit = () => (state?.profile?.unit === 'lb' ? 'lb' : 'kg');
+const toU = (kg) => (unit() === 'lb' ? kg * LB : kg);
+const fromU = (v) => (unit() === 'lb' ? v / LB : v);
+const fmtU = (kg) => fmtNum(toU(kg), unit() === 'lb' ? 0 : 1);
+const fmtW = (kg) => `${fmtU(kg)} ${unit()}`;
+// Peso para cargar: en lb se redondea a múltiplos de 5
+const fmtLoad = (kg) => (unit() === 'lb' ? String(Math.round((kg * LB) / 5) * 5) : fmtNum(kg));
+const setKg = (st) => { const v = num(st?.w); return v == null ? null : (st.u === 'lb' ? v / LB : v); };
+// "20 kg" → "20 kg / 44 lb"
+const addLb = (t) => t.replace(/(\d+(?:\.\d+)?)(–(\d+(?:\.\d+)?))? kg/g, (m, a, _r, b) => `${m} / ${Math.round(a * LB)}${b ? '–' + Math.round(b * LB) : ''} lb`);
 const mondayOf = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 
 /* =========================================================
@@ -151,16 +164,21 @@ function barBase(ex) {
 }
 // Qué discos poner por lado: "40 kg = barra 20 + 10 por lado"
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
-function platesText(ex, w) {
-  const base = barBase(ex);
-  if (base == null || !(BARBELL.has(ex.name) || EZBAR.has(ex.name) || SMITH.has(ex.name)) || !w) return '';
-  const per = (w - base) / 2;
-  if (per < -0.01) return `Menos que la barra (${fmtNum(base)} kg)`;
-  if (per < 0.01) return `${fmtNum(w)} kg = barra sola`;
+// shown: el número tal como lo escribiste (en lb), para no redondear de más
+function platesText(ex, w, shown) {
+  const baseKg = barBase(ex);
+  if (baseKg == null || !(BARBELL.has(ex.name) || EZBAR.has(ex.name) || SMITH.has(ex.name)) || !w) return '';
+  const lb = unit() === 'lb', u = unit();
+  const W = lb ? (shown ?? Math.round((w * LB) / 5) * 5) : w;
+  const base = lb ? Math.round((baseKg * LB) / 5) * 5 : baseKg;
+  const plates = lb ? [45, 35, 25, 10, 5, 2.5] : PLATES;
+  const per = (W - base) / 2;
+  if (per < -0.01) return `Menos que la barra (${fmtNum(base)} ${u})`;
+  if (per < 0.01) return `${fmtNum(W)} ${u} = barra sola`;
   let left = per;
   const used = [];
-  for (const p of PLATES) while (left >= p - 0.001) { used.push(p); left -= p; }
-  return `${fmtNum(w)} kg = barra ${fmtNum(base)} + por lado: ${used.map((x) => fmtNum(x, 2)).join(' + ')}${left > 0.01 ? ' (aprox.)' : ''}`;
+  for (const p of plates) while (left >= p - 0.001) { used.push(p); left -= p; }
+  return `${fmtNum(W)} ${u} = barra ${fmtNum(base)} + por lado: ${used.map((x) => fmtNum(x, 2)).join(' + ')}${left > 0.01 ? ' (aprox.)' : ''}`;
 }
 // Lo que hay que saber del equipo de cada ejercicio
 function equipInfo(name) {
@@ -181,7 +199,7 @@ function warmSets(w) {
   if (r(w * 0.5) >= 25) out.push([r(w * 0.5), 6]);
   const w75 = r(w * 0.75);
   if (w75 > out[out.length - 1][0] && w75 < w) out.push([w75, 3]);
-  return out.map(([kg, reps]) => (kg === 20 ? `barra sola ×${reps}` : `${fmtNum(kg)} kg ×${reps}`)).join(' · ');
+  return out.map(([kg, reps]) => (kg === 20 ? `barra sola ×${reps}` : `${fmtLoad(kg)} ${unit()} ×${reps}`)).join(' · ');
 }
 
 async function load() {
@@ -521,7 +539,7 @@ const VIEWS = {
     if (recs.length) {
       h += `<div class="section-head"><h2>Récords 🏆</h2></div><div class="card"><ul class="list">
         ${recs.map((r) => `<li><button class="row-btn" data-action="ex-open" data-id="${r.e.id}"><span>${esc(r.e.name)}</span>
-          <b>${r.pr > 0 ? fmtNum(r.pr) + ' kg' : r.reps + ' reps'}</b><span class="muted">›</span></button></li>`).join('')}
+          <b>${r.pr > 0 ? fmtW(r.pr) : r.reps + ' reps'}</b><span class="muted">›</span></button></li>`).join('')}
       </ul></div>`;
     }
 
@@ -536,7 +554,7 @@ const VIEWS = {
         h += `<p class="group-title">${MESES_LARGO[d.getMonth()]} ${d.getFullYear()}</p>`;
       }
       h += `<button class="card row-btn" style="border:0;margin:8px 0" data-action="workout-open" data-id="${w.id}">
-        <span><b>${esc(w.dayName)}</b><br><span class="muted small">${fmtDate(w.date)} · ${w.entries.length} ejercicio${w.entries.length === 1 ? '' : 's'}${w.end ? ' · ' + fmtDur(w.end - w.start) : ''} · ${fmtNum(volume(w), 0)} kg</span></span>
+        <span><b>${esc(w.dayName)}</b><br><span class="muted small">${fmtDate(w.date)} · ${w.entries.length} ejercicio${w.entries.length === 1 ? '' : 's'}${w.end ? ' · ' + fmtDur(w.end - w.start) : ''} · ${fmtNum(toU(volume(w)), 0)} ${unit()}</span></span>
         <span class="muted">›</span></button>`;
     }
     return h;
@@ -623,10 +641,14 @@ const START = {
 };
 const startFor = (exId) => START[exName(exId)] || null;
 
+function placeholderKg(last, si, exId) {
+  const s = last ? last.sets[si] || last.sets[last.sets.length - 1] : null;
+  return s && s.w ? s.w : (!last && startFor(exId)?.[0]) || null;
+}
 function placeholder(last, si, reps, exId) {
   const s = last ? last.sets[si] || last.sets[last.sets.length - 1] : null;
   return {
-    w: s && s.w ? fmtNum(s.w) : (!last && startFor(exId)?.[0]) ? String(startFor(exId)[0]) : 'kg',
+    w: s && s.w ? fmtU(s.w) : (!last && startFor(exId)?.[0]) ? fmtLoad(startFor(exId)[0]) : unit(),
     r: s && s.r ? String(s.r) : (String(reps).match(/\d+/)?.[0] || 'reps'),
   };
 }
@@ -653,15 +675,15 @@ function viewWorkout() {
     const last = lastPerf(en.exId);
     const info = [];
     if (en.reps) info.push(`Meta: ${en.sets.length}×${esc(en.reps)}`);
-    if (last) info.push(`Última vez (${fmtDateShort(last.date)}): ${last.sets.map((s) => `${s.w ? fmtNum(s.w) : '—'}×${s.r}`).join(', ')}`);
-    if (!last && startFor(en.exId)) info.push(`<span style="color:var(--text)">🟢 Para empezar: ${esc(startFor(en.exId)[1])}</span>`);
+    if (last) info.push(`Última vez (${fmtDateShort(last.date)}): ${last.sets.map((s) => `${s.w ? fmtU(s.w) : '—'}×${s.r}`).join(', ')} <span class="muted">(${unit()} × reps)</span>`);
+    if (!last && startFor(en.exId)) info.push(`<span style="color:var(--text)">🟢 Para empezar: ${esc(addLb(startFor(en.exId)[1]))}</span>`);
     const exo = exById(en.exId);
     if (exo?.setup) info.push(`<span style="color:var(--text)">⚙️ Tu ajuste: ${esc(exo.setup)}</span>`);
-    const firstW = num(en.sets[0]?.w) ?? num(placeholder(last, 0, en.reps, en.exId).w);
-    const pt = platesText(exo, firstW);
+    const firstKg = setKg(en.sets[0]) ?? placeholderKg(last, 0, en.exId);
+    const pt = platesText(exo, firstKg, en.sets[0]?.u === 'lb' && unit() === 'lb' ? num(en.sets[0].w) : undefined);
     if (pt) info.push(`<span class="plates" data-plates="${ei}">🏋️ ${esc(pt)}</span>`);
     if (BARBELL.has(exName(en.exId))) {
-      const ws = warmSets(num(en.sets[0]?.w) ?? num(placeholder(last, 0, en.reps, en.exId).w));
+      const ws = warmSets(firstKg);
       if (ws) info.push(`<span class="warm-sets">🔥 Antes calienta: ${ws} <span class="muted">(no cuentan)</span></span>`);
     }
     if (readyToProgress(last, en)) info.push(`<b style="color:var(--accent)">💡 La vez pasada llegaste al tope de reps: hoy sube un poco de peso</b>`);
@@ -680,7 +702,7 @@ function viewWorkout() {
             <button class="btn sm ghost" data-action="how" data-id="${en.exId}">Ocultar</button></div>`
         : `<button class="btn how-btn" data-action="how" data-id="${en.exId}">▶ Ver cómo se hace</button>`) : ''}
       <div class="sets">
-        <div class="set-row head"><span>#</span><span>kg</span><span>reps</span><span></span></div>
+        <div class="set-row head"><span>#</span><span>${unit()}</span><span>reps</span><span></span></div>
         ${en.sets.map((s, si) => {
           const ph = placeholder(last, si, en.reps, en.exId);
           return `<div class="set-row ${s.done ? 'done' : ''}">
@@ -712,7 +734,7 @@ function finishWorkout() {
       exId: en.exId,
       sets: en.sets
         .filter((s) => s.done || s.r !== '')
-        .map((s) => ({ w: num(s.w) ?? 0, r: num(s.r) ?? 0 }))
+        .map((s) => ({ w: Math.round((setKg(s) ?? 0) * 100) / 100, r: num(s.r) ?? 0 }))
         .filter((s) => s.r > 0 || s.w > 0),
     }))
     .filter((en) => en.sets.length);
@@ -733,7 +755,7 @@ function finishWorkout() {
   stopRest();
   persist();
   render();
-  toast(prs.length ? `🏆 ¡Nuevo récord en ${prs.join(', ')}!` : `¡Bien hecho! 💪 ${fmtNum(volume(w), 0)} kg levantados`);
+  toast(prs.length ? `🏆 ¡Nuevo récord en ${prs.join(', ')}!` : `¡Bien hecho! 💪 ${fmtNum(toU(volume(w)), 0)} ${unit()} levantados`);
 }
 
 /* ---------- temporizador de descanso ---------- */
@@ -894,7 +916,7 @@ function exerciseSheet(id) {
     s.body.innerHTML = `<p class="label">${esc(ex.group)}</p><h2>${esc(ex.name)}</h2>
       ${ANIM.has(ex.name) ? `<div class="anim-box" data-anim="${esc(ex.name)}"></div>` : ''}
       ${tips.length ? `<ul class="tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
-      ${START[ex.name] ? `<div class="start-box"><b>🟢 Para empezar</b><p>${esc(START[ex.name][1])}</p><p class="muted small">Que te salgan 10–12 reps con buena técnica y te sobren 2–3. Si sobran más, sube; si la técnica falla, baja.</p></div>` : ''}
+      ${START[ex.name] ? `<div class="start-box"><b>🟢 Para empezar</b><p>${esc(addLb(START[ex.name][1]))}</p><p class="muted small">Que te salgan 10–12 reps con buena técnica y te sobren 2–3. Si sobran más, sube; si la técnica falla, baja.</p></div>` : ''}
       <a class="btn" href="${yt}" target="_blank" rel="noopener">▶ Ver videos en YouTube <span class="muted small">(con internet)</span></a>
       ${hasVid
         ? `<p class="label" style="margin-top:18px">Tu video</p><video class="vid" controls playsinline preload="metadata"></video>
@@ -902,7 +924,7 @@ function exerciseSheet(id) {
         : `<button class="vid-empty" data-action="vid-add"><span>🎥</span><b>Agregar tu propio video</b>
            <small>Grábalo o elígelo de tu galería (o descárgalo de YouTube). Se guarda en tu cel y lo ves sin internet.</small></button>`}
       ${equipInfo(ex.name) || barBase(ex) != null ? `<h3>Mi máquina / equipo</h3>
-        ${equipInfo(ex.name) ? `<p class="muted small">${esc(equipInfo(ex.name))}</p>` : ''}` : '<h3>Mi máquina / equipo</h3>'}
+        ${equipInfo(ex.name) ? `<p class="muted small">${esc(addLb(equipInfo(ex.name)))}</p>` : ''}` : '<h3>Mi máquina / equipo</h3>'}
       <div class="grid2">
         ${BARBELL.has(ex.name) || EZBAR.has(ex.name) || SMITH.has(ex.name) || ex.name === 'Prensa' || ex.name === 'Sentadilla hack' ? `<label class="field"><span>${ex.name === 'Prensa' || ex.name === 'Sentadilla hack' ? 'Peso del carro (kg)' : 'Peso de tu barra (kg)'}</span>
           <input class="input" inputmode="decimal" data-f="base" value="${ex.base ?? ''}" placeholder="${barBase(ex) ?? 'Ej. 45'}"></label>` : ''}
@@ -914,11 +936,11 @@ function exerciseSheet(id) {
       ${goodLink ? `<a class="btn sm" href="${esc(ex.link)}" target="_blank" rel="noopener">Abrir enlace ↗</a>` : ''}
       ${hist.length ? `<h3>Tu progreso</h3>
         <div class="stats" style="margin-top:10px">
-          <div><b>${bodyweight ? Math.max(...hist.map((h) => h.reps)) : fmtNum(Math.max(...hist.map((h) => h.max)))}</b><span>${bodyweight ? 'Récord reps' : 'Récord (kg)'}</span></div>
+          <div><b>${bodyweight ? Math.max(...hist.map((h) => h.reps)) : fmtU(Math.max(...hist.map((h) => h.max)))}</b><span>${bodyweight ? 'Récord reps' : `Récord (${unit()})`}</span></div>
           <div><b>${hist.length}</b><span>Veces</span></div>
-          <div><b>${bodyweight ? '—' : fmtNum(Math.max(...hist.map((h) => h.e1rm)), 0)}</b><span>1RM estimado</span></div>
+          <div><b>${bodyweight ? '—' : fmtNum(toU(Math.max(...hist.map((h) => h.e1rm))), 0)}</b><span>1RM estimado</span></div>
         </div>
-        ${lineChart(hist.map((h) => ({ x: h.date, y: bodyweight ? h.reps : h.max })), bodyweight ? 'reps' : 'kg', bodyweight ? 'Repeticiones máximas' : 'Peso máximo')}` : ''}
+        ${lineChart(hist.map((h) => ({ x: h.date, y: bodyweight ? h.reps : toU(h.max) })), bodyweight ? 'reps' : unit(), bodyweight ? 'Repeticiones máximas' : 'Peso máximo')}` : ''}
       <div class="row gap mt"><button class="btn sm" data-action="edit">Editar nombre</button><button class="btn sm ghost danger" data-action="del">Eliminar</button></div>`;
     ANIM.mountAll(s.body);
     if (hasVid) {
@@ -1064,8 +1086,8 @@ function workoutSheet(id) {
   openSheet(`<p class="label">${fmtDate(w.date)}${w.end ? ' · ' + fmtDur(w.end - w.start) : ''}</p><h2>${esc(w.dayName)}</h2>
     ${w.entries.map((e) => `<div class="card" style="background:var(--card2)">
       <div class="row between"><h3>${esc(exName(e.exId))}</h3>${exById(e.exId) ? `<button class="btn sm ghost" data-action="ex-open" data-id="${e.exId}">Ver</button>` : ''}</div>
-      <p class="muted">${e.sets.map((s, i) => `${i + 1}) ${s.w ? fmtNum(s.w) + ' kg × ' : ''}${s.r} reps`).join('<br>')}</p></div>`).join('')}
-    <p class="muted center">Volumen total: <b>${fmtNum(volume(w), 0)} kg</b></p>
+      <p class="muted">${e.sets.map((s, i) => `${i + 1}) ${s.w ? fmtW(s.w) + ' × ' : ''}${s.r} reps`).join('<br>')}</p></div>`).join('')}
+    <p class="muted center">Volumen total: <b>${fmtNum(toU(volume(w)), 0)} ${unit()}</b></p>
     <button class="btn ghost danger" data-action="del">Borrar entrenamiento</button>`, {
     actions: {
       del() {
@@ -1098,6 +1120,12 @@ function alturaSheet() {
 
 async function settingsSheet() {
   const s = openSheet(`<h2>Ajustes</h2>
+    <div class="field"><span>Pesos de las pesas en</span>
+      <div class="chips" style="margin-top:0">
+        <button class="chip ${unit() === 'kg' ? 'on' : ''}" data-action="unit" data-u="kg">Kilos (kg)</button>
+        <button class="chip ${unit() === 'lb' ? 'on' : ''}" data-action="unit" data-u="lb">Libras (lb)</button>
+      </div>
+      <p class="muted small">Lo que ya anotaste se convierte solo. Tu peso corporal se queda en kg.</p></div>
     <label class="field"><span>Descanso entre series (segundos)</span>
       <input class="input" inputmode="numeric" data-f="descanso" value="${state.profile.descanso}"></label>
     <h3>Respaldo</h3>
@@ -1119,6 +1147,14 @@ async function settingsSheet() {
     },
     actions: {
       export: exportData,
+      unit(el) {
+        state.profile.unit = el.dataset.u;
+        persist();
+        closeSheet();
+        render(true);
+        settingsSheet();
+        toast(el.dataset.u === 'lb' ? 'Listo: pesos en libras 🇺🇸' : 'Listo: pesos en kilos');
+      },
       'check-update': checkUpdate,
       import: importData,
       async wipe() {
@@ -1298,7 +1334,7 @@ const ACTIONS = {
     const s = state.active.entries[ei].sets[si];
     if (!s.done) {
       const [wi, ri] = $$('input', el.closest('.set-row'));
-      if (s.w === '' && num(wi.placeholder) != null) s.w = wi.placeholder;
+      if (s.w === '' && num(wi.placeholder) != null) { s.w = wi.placeholder; s.u = unit(); }
       if (s.r === '' && num(ri.placeholder) != null) s.r = ri.placeholder;
       s.done = true;
       startRest();
@@ -1311,7 +1347,7 @@ const ACTIONS = {
   'set-add'(el) {
     const sets = state.active.entries[+el.dataset.ei].sets;
     const prev = sets[sets.length - 1];
-    sets.push({ w: prev?.w ?? '', r: prev?.r ?? '', done: false });
+    sets.push({ w: prev?.w ?? '', u: prev?.u, r: prev?.r ?? '', done: false });
     persist(); render(true);
   },
   'set-del'(el) {
@@ -1373,9 +1409,10 @@ function onField(e) {
     const set = state.active.entries[ei]?.sets[si];
     if (set) {
       set[f] = t.value;
+      if (f === 'w') set.u = unit();
       persist();
       const pl = document.querySelector(`[data-plates="${ei}"]`);
-      if (f === 'w' && pl && num(t.value)) pl.textContent = '🏋️ ' + platesText(exById(state.active.entries[ei].exId), num(t.value));
+      if (f === 'w' && pl && num(t.value)) pl.textContent = '🏋️ ' + platesText(exById(state.active.entries[ei].exId), fromU(num(t.value)), unit() === 'lb' ? num(t.value) : undefined);
     }
   } else if (t.dataset.sched !== undefined) {
     state.schedule[t.dataset.sched] = t.value || null;
