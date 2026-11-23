@@ -296,3 +296,12 @@ select.input.sm { padding-right: 32px; text-overflow: ellipsis; }
 .how .anim-box { margin-top: 0; }
 .thumb { position: relative; width: 88px; height: 66px; }
 button.thumb::after { content: "▶"; position: absolute; right: 4px; bottom: 3px; font-size: 10px; color: var(--accent); }
+.warm { border: 1px solid rgba(255, 170, 80, .28); }
+.warm .list { margin-top: 8px; }
+.warm-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.warm-row:last-child { border-bottom: 0; }
+.warm-txt { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.warm-row .check { width: 48px; flex: none; }
+.warm-row.done .check { background: var(--accent); color: var(--accent-ink); }
+.warm-row.done .warm-txt b { color: var(--muted); text-decoration: line-through; }
+.warm-sets { color: #ffb86b; }

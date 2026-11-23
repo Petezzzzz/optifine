@@ -122,7 +122,27 @@ function migrate(s) {
 let state = defaultState();
 let videoIds = new Set();
 let storageOk = true;
-const ui = { tab: 'hoy', exQ: '', exGroup: 'Todos', metric: 'peso', how: new Set() };
+const ui = { tab: 'hoy', exQ: '', exGroup: 'Todos', metric: 'peso', how: new Set(), warmOpen: null };
+
+/* Calentamiento general (unos 8 min) antes de cada entrenamiento */
+const WARMUP = [
+  ['Caminadora', 'Caminadora o bici suave', '5 min a ritmo cómodo'],
+  ['Círculos de brazos', 'Círculos de brazos', '10 adelante y 10 atrás'],
+  ['Balanceo de piernas', 'Balanceo de piernas', '10 por pierna'],
+  ['Sentadilla sin peso', 'Sentadilla sin peso', '10 reps'],
+  ['Puente de glúteo', 'Puente de glúteo', '10 reps'],
+];
+// Ejercicios con barra que llevan series de aproximación
+const BARBELL = new Set(['Sentadilla', 'Peso muerto', 'Peso muerto rumano', 'Press de banca', 'Remo con barra', 'Press militar', 'Hip thrust']);
+function warmSets(w) {
+  if (!w || w <= 25) return null;
+  const r = (x) => Math.round(x / 2.5) * 2.5;
+  const out = [[20, 10]];
+  if (r(w * 0.5) >= 25) out.push([r(w * 0.5), 6]);
+  const w75 = r(w * 0.75);
+  if (w75 > out[out.length - 1][0] && w75 < w) out.push([w75, 3]);
+  return out.map(([kg, reps]) => (kg === 20 ? `barra sola ×${reps}` : `${fmtNum(kg)} kg ×${reps}`)).join(' · ');
+}
 
 async function load() {
   try {
@@ -320,6 +340,7 @@ const VIEWS = {
           <span class="grow">${esc(exName(it.exId))}</span>
           ${videoIds.has(it.exId) ? '<span class="badge">▶︎</span>' : ''}
           <span class="muted">${it.sets}×${esc(it.reps)}</span></button></li>`).join('')}</ul>
+        <p class="muted small" style="margin-top:10px">🔥 Empieza con 8 min de calentamiento (viene incluido).</p>
         <button class="btn primary big" data-action="start" data-day="${day.id}">Empezar entrenamiento</button>
       </div>`;
     } else {
@@ -501,7 +522,9 @@ function startWorkout(dayId) {
   state.active = {
     id: uid(), start: Date.now(), dayId: day?.id || null, dayName: day?.name || 'Entrenamiento libre',
     entries: (day?.items || []).map((it) => newEntry(it.exId, it.sets, it.reps)),
+    warm: [],
   };
+  ui.warmOpen = null;
   persist();
   ui.tab = 'hoy';
   render();
@@ -570,6 +593,19 @@ function viewWorkout() {
   const a = state.active;
   let h = `<div class="card wk-head"><div><p class="label">${fmtDate(dateStr(new Date(a.start)))}</p><h2>${esc(a.dayName)}</h2></div>
     <div class="elapsed" data-elapsed>0:00</div></div>`;
+  a.warm ||= [];
+  const wDone = WARMUP.filter((_, i) => a.warm.includes(i)).length;
+  const wOpen = ui.warmOpen ?? wDone < WARMUP.length;
+  h += `<div class="card warm">
+    <div class="row between"><div><p class="label">🔥 Calentamiento · 8 min</p>
+      <h3>${wDone === WARMUP.length ? '✓ Listo, a darle' : `${wDone} de ${WARMUP.length}`}</h3></div>
+      <button class="btn sm ghost" data-action="warm-toggle">${wOpen ? 'Ocultar' : 'Ver'}</button></div>
+    ${wOpen ? `<ul class="list">${WARMUP.map(([anim, label, dose], i) => `<li class="warm-row ${a.warm.includes(i) ? 'done' : ''}">
+        <button class="thumb sm" data-action="warm-show" data-i="${i}" data-anim="${esc(anim)}" aria-label="Ver ${esc(label)}"></button>
+        <button class="warm-txt" data-action="warm-show" data-i="${i}"><b>${esc(label)}</b><span class="muted small">${esc(dose)}</span></button>
+        <button class="check" data-action="warm-done" data-i="${i}" aria-label="Marcar ${esc(label)}">✓</button></li>`).join('')}</ul>
+      <p class="muted small">Toca un ejercicio para verlo en grande.</p>` : ''}
+  </div>`;
   if (!a.entries.length) h += `<p class="muted center">Agrega los ejercicios que vas a hacer 👇</p>`;
   a.entries.forEach((en, ei) => {
     const last = lastPerf(en.exId);
@@ -577,6 +613,10 @@ function viewWorkout() {
     if (en.reps) info.push(`Meta: ${en.sets.length}×${esc(en.reps)}`);
     if (last) info.push(`Última vez (${fmtDateShort(last.date)}): ${last.sets.map((s) => `${s.w ? fmtNum(s.w) : '—'}×${s.r}`).join(', ')}`);
     if (!last && startFor(en.exId)) info.push(`<span style="color:var(--text)">🟢 Para empezar: ${esc(startFor(en.exId)[1])}</span>`);
+    if (BARBELL.has(exName(en.exId))) {
+      const ws = warmSets(num(en.sets[0]?.w) ?? num(placeholder(last, 0, en.reps, en.exId).w));
+      if (ws) info.push(`<span class="warm-sets">🔥 Antes calienta: ${ws} <span class="muted">(no cuentan)</span></span>`);
+    }
     if (readyToProgress(last, en)) info.push(`<b style="color:var(--accent)">💡 La vez pasada llegaste al tope de reps: hoy sube un poco de peso</b>`);
     h += `<div class="card">
       <div class="wk-ex-head">
@@ -1166,6 +1206,27 @@ const ACTIONS = {
     startWorkout(el.dataset.day);
   },
   'ex-open'(el) { exerciseSheet(el.dataset.id); },
+  'warm-toggle'() {
+    const a = state.active, done = (a.warm || []).length >= WARMUP.length;
+    ui.warmOpen = !(ui.warmOpen ?? !done);
+    render(true);
+  },
+  'warm-done'(el) {
+    const a = state.active, i = +el.dataset.i;
+    a.warm ||= [];
+    a.warm = a.warm.includes(i) ? a.warm.filter((x) => x !== i) : [...a.warm, i];
+    if (a.warm.length >= WARMUP.length) { ui.warmOpen = false; toast('Calentamiento listo 🔥 ¡A darle!'); }
+    persist();
+    render(true);
+  },
+  'warm-show'(el) {
+    const [anim, label, dose] = WARMUP[+el.dataset.i];
+    const s = openSheet(`<p class="label">Calentamiento</p><h2>${esc(label)}</h2>
+      <div class="anim-box" data-anim="${esc(anim)}"></div>
+      <p><b>${esc(dose)}</b></p>
+      <ul class="tips">${ANIM.tips(anim).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`);
+    ANIM.mountAll(s.body);
+  },
   how(el) { const id = el.dataset.id; if (ui.how.has(id)) ui.how.delete(id); else ui.how.add(id); render(true); },
   'ex-new'() { editExerciseSheet(null, (ex) => exerciseSheet(ex.id)); },
   'ex-group'(el) { ui.exGroup = el.dataset.g; render(true); },

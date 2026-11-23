@@ -190,6 +190,30 @@ const ANIM = (() => {
       b: { hip: [82, 90], t: 155, hand: [85, 108] },
       tips: ['Boca arriba, rodillas dobladas y pies cerca de los glúteos.', 'Sube la cadera apretando glúteos hasta quedar recto de hombros a rodillas.', 'Pausa 1 segundo arriba y baja lento.'],
     },
+    'Sentadilla sin peso': {
+      a: { hip: [80, 66], t: -90, hand: [84, 67], foot: [84, 110], eh: [0, 1] },
+      b: { hip: [63, 92], t: -58, hand: [104, 66] },
+      tips: ['Brazos al frente para equilibrarte.', 'Baja lento hasta donde puedas con la espalda recta.', 'Sube apretando glúteos.'],
+    },
+    'Círculos de brazos': {
+      front: true, ms: 1100,
+      fn(t) {
+        const ph = 2 * Math.PI * t;
+        const a = 0.16 * Math.sin(ph);
+        return { hip: [80, 66], t: -90, hand: [89 + 33 * Math.cos(a), 36 + 33 * Math.sin(a)], foot: [86, 110], eh: [0, 1] };
+      },
+      tips: ['Brazos estirados a los lados.', 'Haz círculos pequeños, 10 hacia adelante y 10 hacia atrás.', 'Hombros relajados, lejos de las orejas.'],
+    },
+    'Balanceo de piernas': {
+      ms: 1500,
+      fn(t) {
+        const a = 0.75 * Math.sin(2 * Math.PI * t);
+        const ft = [80 + 46 * Math.sin(a), 66 + 46 * Math.cos(a)];
+        return { hip: [80, 66], t: -90, hand: [108, 50], foot: ft, toe: [ft[0] + 8 * Math.cos(a), ft[1] - 8 * Math.sin(a)], ffoot: [80, 110], fkh: [1, 0], kh: [1, 0], eh: [0, 1] };
+      },
+      props: [{ k: 'line', p: [114, 20, 114, 110], w: 4 }],
+      tips: ['Agárrate de una pared o máquina.', 'Balancea la pierna de adelante hacia atrás, relajada.', '10 por pierna, cada vez un poco más alto.'],
+    },
     'Extensión de cuádriceps': {
       a: { hip: [70, 79], t: -100, hand: [70, 84], foot: [80, 106], kh: [1, -0.2] },
       b: { foot: [112, 70] },
