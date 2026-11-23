@@ -1252,6 +1252,7 @@ function toast(msg) {
 const ACTIONS = {
   tab(el) { ui.tab = el.dataset.tab; render(); },
   settings: settingsSheet,
+  update: checkUpdate,
   'load-fullbody'() {
     if (state.days.length && !confirm('¿Reemplazar tu rutina actual?')) return;
     loadTemplate('fullbody'); render(); toast('Full body lista ✅ Lunes, miércoles y viernes');
@@ -1403,10 +1404,25 @@ function showUpdate() {
   document.body.appendChild(b);
 }
 async function checkUpdate() {
+  const btn = $('[data-action="update"]');
+  btn?.classList.add('spin');
+  const done = () => btn?.classList.remove('spin');
   try {
-    const reg = await navigator.serviceWorker.getRegistration();
-    if (reg) { await reg.update(); toast('Buscando actualización…'); }
-  } catch (e) { toast('Sin internet: no se pudo revisar'); }
+    const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    if (!reg) { await flush(); location.reload(); return; } // vista previa: solo recarga
+    toast('Buscando actualización…');
+    await reg.update();
+    const nuevo = reg.installing || reg.waiting;
+    if (!nuevo) { done(); toast('Ya tienes la versión más nueva ✅'); return; }
+    // Hay versión nueva: se instala y se recarga sola
+    const go = async () => { await flush(); location.reload(); };
+    if (nuevo.state === 'activated') return go();
+    nuevo.addEventListener('statechange', () => { if (nuevo.state === 'activated') go(); });
+    setTimeout(go, 6000);
+  } catch (e) {
+    done();
+    toast('Sin internet: conéctate para actualizar');
+  }
 }
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   addEventListener('load', () => {

@@ -312,3 +312,7 @@ button.thumb::after { content: "▶"; position: absolute; right: 4px; bottom: 3p
   background: var(--accent); color: var(--accent-ink); font-size: 15px; font-weight: 600;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
 }
+.top-actions { display: flex; gap: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.icon-btn.spin svg { animation: spin .9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .icon-btn.spin svg { animation: none; opacity: .5; } }
