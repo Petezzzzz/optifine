@@ -1,6 +1,6 @@
 /* Service worker: guarda la app en el cel para que abra sin internet.
    Con internet siempre carga la versión más nueva; sin internet usa la guardada. */
-const CACHE = 'mi-rutina-v14';
+const CACHE = 'mi-rutina-v15';
 const ASSETS = [
   './',
   './index.html',
@@ -24,11 +24,18 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    // Las versiones viejas (antes de la 11) no sabían avisar que había actualización:
+    // si venimos de una de esas, recargamos la app abierta para que tome la nueva sola.
+    const vieja = keys.some((k) => { const m = k.match(/^mi-rutina-v(\d+)$/); return m && +m[1] < 11; });
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+    if (vieja) {
+      const wins = await self.clients.matchAll({ type: 'window' });
+      wins.forEach((w) => w.navigate(w.url).catch(() => {}));
+    }
+  })());
 });
 
 // Primero internet (con límite de 4 s por si la señal está mala); si no hay, lo guardado.
