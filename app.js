@@ -1097,6 +1097,9 @@ async function settingsSheet() {
     <p class="muted small">Todo vive solo en este cel. Si borras la app o cambias de cel, se pierde. Haz un respaldo de vez en cuando y guárdalo (WhatsApp, Drive, correo…). Los videos no van en el respaldo.</p>
     <div class="row gap"><button class="btn" data-action="export">Guardar respaldo</button><button class="btn" data-action="import">Cargar respaldo</button></div>
     <p class="muted small" data-usage></p>
+    <h3>Actualizaciones</h3>
+    <p class="muted small">Cuando haya una versión nueva te sale un aviso arriba. Tus datos no se borran al actualizar. <span data-version></span></p>
+    <button class="btn" data-action="check-update">Buscar actualización</button>
     <h3>Instalar en tu cel</h3>
     <p class="muted small"><b>iPhone:</b> abre la página en Safari → botón Compartir → “Agregar a pantalla de inicio”.<br>
     <b>Android:</b> abre la página en Chrome → menú ⋮ → “Instalar app”.<br>
@@ -1109,6 +1112,7 @@ async function settingsSheet() {
     },
     actions: {
       export: exportData,
+      'check-update': checkUpdate,
       import: importData,
       async wipe() {
         if (!confirm('¿Borrar TODO? Rutina, historial, medidas y videos. No se puede deshacer.')) return;
@@ -1128,6 +1132,9 @@ async function settingsSheet() {
   try {
     const est = await navigator.storage?.estimate?.();
     const persisted = await navigator.storage?.persisted?.();
+    const keys = (await caches?.keys?.()) || [];
+    const v = keys.map((k) => k.match(/^mi-rutina-v(\d+)$/)?.[1]).filter(Boolean).sort((a, b) => b - a)[0];
+    if (v) $('[data-version]', s.el).textContent = `Tienes la versión ${v}.`;
     if (est) $('[data-usage]', s.el).textContent = `Espacio usado: ${fmtNum(est.usage / 1048576)} MB${persisted ? ' · almacenamiento protegido ✅' : ''}`;
   } catch (e) { /* nada */ }
 }
@@ -1385,6 +1392,30 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheets.l
   if (!storageOk) toast('⚠️ Este navegador no deja guardar datos (¿modo incógnito?)');
 })();
 
+/* Actualizaciones: cuando llega una versión nueva, se avisa con un botón para recargar.
+   Los datos viven en IndexedDB, así que actualizar no borra nada. */
+function showUpdate() {
+  if ($('.update-banner')) return;
+  const b = document.createElement('button');
+  b.className = 'update-banner';
+  b.innerHTML = '✨ Hay una versión nueva de la app · <b>Actualizar</b>';
+  b.onclick = async () => { await flush(); location.reload(); };
+  document.body.appendChild(b);
+}
+async function checkUpdate() {
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) { await reg.update(); toast('Buscando actualización…'); }
+  } catch (e) { toast('Sin internet: no se pudo revisar'); }
+}
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  addEventListener('load', () => {
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then((reg) => reg.update()).catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
+  });
+  // Al regresar a la app (por ejemplo, desde otra app), revisa si hay versión nueva.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {});
+  });
 }

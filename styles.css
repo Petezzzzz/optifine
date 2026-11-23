@@ -306,3 +306,9 @@ button.thumb::after { content: "▶"; position: absolute; right: 4px; bottom: 3p
 .warm-row.done .warm-txt b { color: var(--muted); text-decoration: line-through; }
 .warm-sets { color: #ffb86b; }
 .plates { color: var(--text); font-variant-numeric: tabular-nums; }
+.update-banner {
+  position: fixed; z-index: 40; left: 12px; right: 12px; top: calc(env(safe-area-inset-top) + 10px);
+  max-width: 536px; margin: 0 auto; padding: 14px 16px; border: 0; border-radius: 16px;
+  background: var(--accent); color: var(--accent-ink); font-size: 15px; font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+}
