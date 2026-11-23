@@ -1,5 +1,6 @@
-/* Service worker: guarda la app en el cel para que abra sin internet. */
-const CACHE = 'mi-rutina-v13';
+/* Service worker: guarda la app en el cel para que abra sin internet.
+   Con internet siempre carga la versión más nueva; sin internet usa la guardada. */
+const CACHE = 'mi-rutina-v14';
 const ASSETS = [
   './',
   './index.html',
@@ -14,7 +15,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' evita que se guarden archivos viejos de la caché del navegador
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -25,19 +31,26 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Primero lo guardado (rápido y sin internet); si hay internet, se actualiza en segundo plano.
+// Primero internet (con límite de 4 s por si la señal está mala); si no hay, lo guardado.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const key = req.mode === 'navigate' ? './index.html' : req;
-    const cached = await cache.match(key, { ignoreSearch: true });
-    const network = fetch(req).then((res) => {
+    const network = fetch(req, { cache: 'no-cache' }).then((res) => {
       if (res && res.ok && res.type === 'basic') cache.put(key, res.clone());
       return res;
-    }).catch(() => null);
-    if (cached) { e.waitUntil(network); return cached; }
-    return (await network) || new Response('Sin conexión', { status: 503, statusText: 'Offline' });
+    });
+    const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 4000));
+    try {
+      const res = await Promise.race([network, timeout]);
+      if (res) return res;
+    } catch (err) { /* sin internet */ }
+    const cached = await cache.match(key, { ignoreSearch: true });
+    if (cached) return cached;
+    try { return await network; } catch (err) {
+      return new Response('Sin conexión', { status: 503, statusText: 'Offline' });
+    }
   })());
 });

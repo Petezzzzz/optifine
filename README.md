@@ -33,5 +33,5 @@ python3 -m http.server 8000
 ## Archivos
 - `index.html`, `styles.css`, `app.js`: la app (sin librerías ni dependencias).
 - `anim.js`: animaciones de los ejercicios (muñequito en SVG + tips de técnica).
-- `sw.js`: service worker que guarda la app para usarla sin internet. Si cambias algún archivo, sube la versión de `CACHE` para que los cels se actualicen.
+- `sw.js`: service worker. Con internet siempre carga la versión más nueva; sin internet usa la guardada. Si cambias algún archivo, sube la versión de `CACHE`.
 - `manifest.webmanifest` e `icons/`: para instalarla como app.

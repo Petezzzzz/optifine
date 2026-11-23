@@ -1426,7 +1426,7 @@ async function checkUpdate() {
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   addEventListener('load', () => {
     const hadController = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js').then((reg) => reg.update()).catch(() => {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => reg.update()).catch(() => {});
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
   });
   // Al regresar a la app (por ejemplo, desde otra app), revisa si hay versión nueva.
